@@ -8,11 +8,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
+        darkMode: 'class',
         theme: {
           extend: {
             colors: {
-              primary: '#f97316', // Orange-500
-              secondary: '#1e293b', // Slate-800
+              // Corporate Palette
+              misportBlue: '#007bff',
+              misportBlack: '#000000',
+              misportDark: '#121212', // Slightly lighter black for cards
+              misportDarker: '#0a0a0a', // Backgrounds
+              misportWhite: '#ffffff',
+              misportOrange: '#ff5722',
+              misportGray: '#1f2937', // Gray-800 equivalent for inputs
+              
+              // Map to generic names for compatibility if needed
+              primary: '#007bff', 
+              secondary: '#000000',
+            },
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
             }
           }
         }
@@ -34,7 +48,7 @@
 }
 </script>
   </head>
-  <body>
+  <body class="bg-misportBlack text-misportWhite antialiased">
     <div id="root"></div>
     <!-- Vite entry point -->
     <script type="module" src="/src/main.tsx"></script>

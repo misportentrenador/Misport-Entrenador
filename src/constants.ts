@@ -247,18 +247,19 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
   }
 ];
 
-export const CURRENT_USER: User = {
-  id: 'u_1',
+// --- CREDENTIALS FOR AUTH ---
+export const MOCK_CLIENT_USER: User = {
+  id: 'u_client_demo',
   name: 'Cliente Demo',
-  email: 'cliente@misport.com',
+  email: 'cliente@misport.es',
   phone: '600123456',
   role: 'CLIENT'
 };
 
-export const MOCK_ADMIN: User = {
-  id: 'u_admin',
+export const MOCK_ADMIN_USER: User = {
+  id: 'u_admin_master',
   name: 'Admin MISPORT',
-  email: 'direccion@misport.es',
+  email: 'admin@misport.es',
   phone: '000000000',
   role: 'ADMIN'
 };

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { BookingState } from '../types';
@@ -220,28 +219,28 @@ export const BookingWizard: React.FC = () => {
 
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 space-y-6 bg-white rounded-xl shadow-2xl border border-gray-100 text-center animate-fade-in max-w-2xl mx-auto mt-8">
-        <div className="w-24 h-24 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-4 ring-8 ring-green-50/50">
+      <div className="flex flex-col items-center justify-center p-8 space-y-6 bg-misportDark rounded-xl shadow-2xl border border-gray-800 text-center animate-fade-in max-w-2xl mx-auto mt-8">
+        <div className="w-24 h-24 bg-green-900/30 rounded-full flex items-center justify-center text-green-500 mb-4 ring-8 ring-green-900/20">
           <CheckCircle size={56} strokeWidth={1.5} />
         </div>
-        <h2 className="text-4xl font-light text-gray-800 tracking-tight">Reserva <span className="font-bold">Confirmada</span></h2>
-        <p className="text-gray-500 max-w-md font-light text-lg">
-          Tu sesión en <span className="font-semibold text-gray-700">{selectedCenter?.name}</span> está lista.
+        <h2 className="text-4xl font-bold text-white tracking-tight">Reserva <span className="text-misportBlue">Confirmada</span></h2>
+        <p className="text-gray-400 max-w-md font-light text-lg">
+          Tu sesión en <span className="font-bold text-white">{selectedCenter?.name}</span> está lista.
         </p>
-        <div className="bg-gray-50 p-6 rounded-xl w-full border border-gray-100 shadow-inner">
+        <div className="bg-gray-900/50 p-6 rounded-xl w-full border border-gray-800 shadow-inner">
             <div className="grid grid-cols-2 gap-4 text-left">
                 <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Fecha</p>
-                    <p className="text-lg font-medium text-gray-800">{state.selectedDate}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Fecha</p>
+                    <p className="text-lg font-medium text-white">{state.selectedDate}</p>
                 </div>
                 <div>
-                    <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Hora</p>
-                    <p className="text-lg font-medium text-primary">{state.selectedTime}</p>
+                    <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Hora</p>
+                    <p className="text-lg font-medium text-misportOrange">{state.selectedTime}</p>
                 </div>
-                <div className="col-span-2 pt-4 border-t border-gray-200 mt-2">
-                     <p className="text-xs uppercase tracking-wider text-gray-400 font-semibold">Servicio</p>
-                     <p className="text-lg font-medium text-gray-800">{selectedType?.name}</p>
-                     {selectedTrainer && <p className="text-sm text-gray-500 mt-1">con {selectedTrainer.name}</p>}
+                <div className="col-span-2 pt-4 border-t border-gray-800 mt-2">
+                     <p className="text-xs uppercase tracking-wider text-gray-500 font-bold">Servicio</p>
+                     <p className="text-lg font-medium text-white">{selectedType?.name}</p>
+                     {selectedTrainer && <p className="text-sm text-misportBlue mt-1">con {selectedTrainer.name}</p>}
                 </div>
             </div>
         </div>
@@ -250,7 +249,7 @@ export const BookingWizard: React.FC = () => {
             setIsSuccess(false);
             setState({ step: 1, centerId: null, trainingTypeId: null, trainerId: null, selectedDate: new Date().toISOString().split('T')[0], selectedTime: null });
           }}
-          className="bg-secondary hover:bg-slate-700 text-white px-10 py-4 rounded-lg font-medium tracking-wide transition-colors shadow-lg mt-4"
+          className="bg-misportBlue hover:bg-blue-600 text-white px-10 py-4 rounded-lg font-medium tracking-wide transition-colors shadow-lg mt-4"
         >
           Hacer otra reserva
         </button>
@@ -259,30 +258,30 @@ export const BookingWizard: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto bg-white min-h-[600px] rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans">
+    <div className="w-full max-w-5xl mx-auto bg-misportDark min-h-[600px] rounded-2xl shadow-2xl overflow-hidden flex flex-col font-sans border border-gray-800">
       {/* Elegant Header */}
-      <div className="bg-white px-8 py-6 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10">
+      <div className="bg-misportDark px-8 py-6 border-b border-gray-800 flex justify-between items-center sticky top-0 z-10">
         <div>
-            <h2 className="text-2xl font-light text-gray-800 tracking-tight">
+            <h2 className="text-2xl font-bold text-white tracking-tight">
                 {state.step === 1 && "Selecciona tu Centro"}
                 {state.step === 2 && "Elige tu Entrenamiento"}
                 {state.step === 3 && "Selecciona Entrenador"}
                 {state.step === 4 && "Fecha y Hora"}
                 {state.step === 5 && "Confirmación"}
             </h2>
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-3">
                 {STEPS.map((_, i) => (
-                    <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i + 1 <= state.step ? 'w-8 bg-primary' : 'w-2 bg-gray-200'}`}></div>
+                    <div key={i} className={`h-1 rounded-full transition-all duration-500 ${i + 1 <= state.step ? 'w-8 bg-misportBlue' : 'w-2 bg-gray-700'}`}></div>
                 ))}
             </div>
         </div>
         <div className="text-right hidden sm:block">
-             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Paso {state.step}/5</span>
+             <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">Paso {state.step}/5</span>
         </div>
       </div>
 
       {/* Content Body */}
-      <div className="flex-1 p-8 overflow-y-auto bg-gray-50/50">
+      <div className="flex-1 p-8 overflow-y-auto bg-misportDarker">
         
         {/* Step 1: Center Selection (Cinematic Cards) */}
         {state.step === 1 && (
@@ -294,30 +293,30 @@ export const BookingWizard: React.FC = () => {
                   setState(prev => ({ ...prev, centerId: center.id }));
                   setTimeout(() => handleNext(), 100); 
                 }}
-                className={`group relative cursor-pointer rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 h-80 ${state.centerId === center.id ? 'ring-4 ring-primary' : ''}`}
+                className={`group relative cursor-pointer rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 h-80 ${state.centerId === center.id ? 'ring-2 ring-misportBlue' : 'border border-gray-800'}`}
               >
                 {/* Full Background Image */}
                 <div className="absolute inset-0 bg-gray-900">
                     <img 
                         src={center.image} 
                         alt={center.name} 
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-60 transition-opacity duration-500"
+                        className="w-full h-full object-cover opacity-60 group-hover:opacity-40 transition-opacity duration-500"
                     />
                 </div>
                 
                 {/* Elegant Overlay Rótulo */}
-                <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black/90 via-black/40 to-transparent">
-                    <div className="border-l-4 border-primary pl-4 transform group-hover:translate-x-2 transition-transform duration-300">
+                <div className="absolute inset-0 flex flex-col justify-end p-6 bg-gradient-to-t from-black via-black/50 to-transparent">
+                    <div className="border-l-4 border-misportBlue pl-4 transform group-hover:translate-x-2 transition-transform duration-300">
                         <h3 className="font-bold text-2xl text-white tracking-wide uppercase">{center.name}</h3>
                         <p className="text-gray-300 text-sm font-light mt-1 flex items-center gap-1">
-                            <MapPin size={12} /> {center.address}
+                            <MapPin size={12} className="text-misportBlue"/> {center.address}
                         </p>
                     </div>
                 </div>
                 
                 {/* Selected Indicator */}
                 {state.centerId === center.id && (
-                    <div className="absolute top-4 right-4 bg-primary text-white p-2 rounded-full shadow-lg">
+                    <div className="absolute top-4 right-4 bg-misportBlue text-white p-2 rounded-full shadow-lg">
                         <CheckCircle size={24} />
                     </div>
                 )}
@@ -331,8 +330,8 @@ export const BookingWizard: React.FC = () => {
           <div className="space-y-4 max-w-3xl mx-auto">
              {availableTrainingTypes.length === 0 ? (
                 <div className="text-center py-20">
-                    <AlertCircle className="mx-auto text-gray-300 mb-4" size={48}/>
-                    <p className="text-gray-500 text-lg">No hay servicios disponibles en este centro actualmente.</p>
+                    <AlertCircle className="mx-auto text-gray-600 mb-4" size={48}/>
+                    <p className="text-gray-400 text-lg">No hay servicios disponibles en este centro actualmente.</p>
                 </div>
              ) : (
                 availableTrainingTypes.map(type => (
@@ -342,22 +341,22 @@ export const BookingWizard: React.FC = () => {
                         setState(prev => ({ ...prev, trainingTypeId: type.id }));
                         setTimeout(() => handleNext(), 100);
                     }}
-                    className={`group p-6 bg-white border border-gray-100 rounded-xl hover:border-primary hover:shadow-xl cursor-pointer transition-all flex justify-between items-center ${state.trainingTypeId === type.id ? 'border-primary shadow-lg ring-1 ring-primary' : ''}`}
+                    className={`group p-6 bg-misportDark border border-gray-800 rounded-xl hover:border-misportBlue hover:bg-gray-900 cursor-pointer transition-all flex justify-between items-center ${state.trainingTypeId === type.id ? 'border-misportBlue bg-blue-900/10' : ''}`}
                 >
                     <div className="flex items-center gap-6">
-                        <div className={`p-4 rounded-full text-white transition-colors ${state.trainingTypeId === type.id ? 'bg-primary' : 'bg-gray-800 group-hover:bg-primary'}`}>
+                        <div className={`p-4 rounded-lg text-white transition-colors ${state.trainingTypeId === type.id ? 'bg-misportBlue' : 'bg-gray-800 group-hover:bg-misportBlue'}`}>
                             <Dumbbell size={24} />
                         </div>
                         <div>
-                            <h3 className="font-bold text-xl text-gray-800 group-hover:text-primary transition-colors">{type.name}</h3>
-                            <p className="text-gray-500 text-sm mt-1 font-light">{type.description}</p>
-                            <div className="flex gap-4 mt-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            <h3 className="font-bold text-xl text-white group-hover:text-misportBlue transition-colors">{type.name}</h3>
+                            <p className="text-gray-400 text-sm mt-1 font-light">{type.description}</p>
+                            <div className="flex gap-4 mt-3 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                 <span className="flex items-center gap-1"><Clock size={12}/> {type.durationMinutes} min</span>
                                 <span className="flex items-center gap-1"><UserIcon size={12}/> {type.capacity === 1 ? 'Personal' : `Grupal (Max ${type.capacity})`}</span>
                             </div>
                         </div>
                     </div>
-                    <ChevronRight className="text-gray-300 group-hover:text-primary transform group-hover:translate-x-1 transition-all" size={24} />
+                    <ChevronRight className="text-gray-600 group-hover:text-misportBlue transform group-hover:translate-x-1 transition-all" size={24} />
                 </div>
                 ))
             )}
@@ -369,7 +368,7 @@ export const BookingWizard: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
             {availableTrainers.length === 0 ? (
                 <div className="col-span-3 text-center py-20 text-gray-500 flex flex-col items-center">
-                    <AlertCircle className="mb-4 text-gray-300" size={48} />
+                    <AlertCircle className="mb-4 text-gray-600" size={48} />
                     <p>No hay entrenadores disponibles para este servicio aquí.</p>
                 </div>
             ) : availableTrainers.map(trainer => (
@@ -379,25 +378,25 @@ export const BookingWizard: React.FC = () => {
                   setState(prev => ({ ...prev, trainerId: trainer.id }));
                   setTimeout(() => handleNext(), 100);
                 }}
-                className={`group relative cursor-pointer rounded-xl overflow-hidden aspect-[4/5] shadow-lg hover:shadow-2xl transition-all duration-300 ${state.trainerId === trainer.id ? 'ring-4 ring-primary' : 'hover:-translate-y-2'}`}
+                className={`group relative cursor-pointer rounded-xl overflow-hidden aspect-[4/5] shadow-lg border border-gray-800 hover:border-misportBlue transition-all duration-300 ${state.trainerId === trainer.id ? 'ring-2 ring-misportBlue border-transparent' : 'hover:-translate-y-1'}`}
               >
                 {/* Silhouette Image Filtered */}
                 <img 
                     src={trainer.avatar} 
                     alt={trainer.name} 
-                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 filter grayscale contrast-125 brightness-75 group-hover:brightness-90" 
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 filter grayscale contrast-125 brightness-75 group-hover:brightness-100" 
                 />
                 
                 {/* Elegant Overlay Label */}
                 <div className="absolute inset-0 flex flex-col justify-end">
-                    <div className="bg-gradient-to-t from-black via-black/80 to-transparent p-4 pt-12 text-center">
-                         <h3 className="text-white font-bold text-lg tracking-wider uppercase border-b-2 border-primary inline-block pb-1 mb-1">{trainer.name}</h3>
+                    <div className="bg-gradient-to-t from-black via-black/90 to-transparent p-4 pt-12 text-center">
+                         <h3 className="text-white font-bold text-lg tracking-wider uppercase border-b-2 border-misportBlue inline-block pb-1 mb-1">{trainer.name}</h3>
                          <p className="text-gray-400 text-xs font-light uppercase tracking-widest">Entrenador</p>
                     </div>
                 </div>
 
                 {state.trainerId === trainer.id && (
-                     <div className="absolute top-3 right-3 bg-primary text-white p-1.5 rounded-full shadow-lg">
+                     <div className="absolute top-3 right-3 bg-misportBlue text-white p-1.5 rounded-full shadow-lg">
                         <CheckCircle size={20} />
                     </div>
                 )}
@@ -410,32 +409,32 @@ export const BookingWizard: React.FC = () => {
         {state.step === 4 && (
           <div className="flex flex-col lg:flex-row gap-8 max-w-5xl mx-auto">
             <div className="w-full lg:w-1/2">
-                <label className="block text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">1. Selecciona el día</label>
-                <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">1. Selecciona el día</label>
+                <div className="bg-misportDark p-6 rounded-xl shadow-sm border border-gray-800">
                     <input 
                         type="date" 
                         value={state.selectedDate}
                         min={new Date().toISOString().split('T')[0]}
                         onChange={(e) => setState(prev => ({ ...prev, selectedDate: e.target.value, selectedTime: null }))}
-                        className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary focus:border-transparent focus:outline-none text-xl text-gray-700 font-medium"
+                        className="w-full p-4 bg-gray-900 border border-gray-700 rounded-lg focus:ring-2 focus:ring-misportBlue focus:border-transparent focus:outline-none text-xl text-white font-medium"
                     />
                 </div>
                 
                 {aiTip && (
-                  <div className="mt-8 bg-gradient-to-r from-blue-50 to-white border border-blue-100 p-6 rounded-2xl flex gap-4 items-start shadow-sm animate-fade-in">
-                    <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+                  <div className="mt-8 bg-blue-900/10 border border-blue-900/30 p-6 rounded-xl flex gap-4 items-start shadow-sm animate-fade-in">
+                    <div className="bg-blue-900/20 p-2 rounded-full text-misportBlue">
                         <Sparkles size={20} />
                     </div>
                     <div>
-                        <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">MISPORT Coach Tip</p>
-                        <p className="text-lg text-gray-700 font-light italic leading-relaxed">"{aiTip}"</p>
+                        <p className="text-xs font-bold text-misportBlue uppercase tracking-widest mb-2">MISPORT Coach Tip</p>
+                        <p className="text-lg text-gray-300 font-light italic leading-relaxed">"{aiTip}"</p>
                     </div>
                   </div>
                 )}
             </div>
             
             <div className="w-full lg:w-1/2">
-                <label className="block text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">2. Selecciona la hora</label>
+                <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">2. Selecciona la hora</label>
                 {timeSlots.length > 0 ? (
                     <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                         {timeSlots.map(time => (
@@ -444,8 +443,8 @@ export const BookingWizard: React.FC = () => {
                                 onClick={() => setState(prev => ({ ...prev, selectedTime: time }))}
                                 className={`py-3 px-2 rounded-lg text-sm font-bold transition-all duration-200 ${
                                     state.selectedTime === time 
-                                    ? 'bg-primary text-white shadow-lg transform scale-105' 
-                                    : 'bg-white border border-gray-200 text-gray-600 hover:border-primary hover:text-primary hover:shadow'
+                                    ? 'bg-misportBlue text-white shadow-lg transform scale-105' 
+                                    : 'bg-misportDark border border-gray-700 text-gray-400 hover:border-misportBlue hover:text-misportBlue hover:bg-gray-800'
                                 }`}
                             >
                                 {time}
@@ -453,7 +452,7 @@ export const BookingWizard: React.FC = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="h-64 flex flex-col items-center justify-center bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400">
+                    <div className="h-64 flex flex-col items-center justify-center bg-gray-900/30 rounded-xl border-2 border-dashed border-gray-800 text-gray-600">
                         <Calendar size={48} className="mb-4 opacity-30" />
                         <p className="font-medium">Sin disponibilidad</p>
                         <p className="text-sm mt-1">Prueba otro día</p>
@@ -465,9 +464,9 @@ export const BookingWizard: React.FC = () => {
 
         {/* Step 5: Confirm */}
         {state.step === 5 && (
-          <div className="max-w-xl mx-auto bg-white p-8 rounded-2xl shadow-xl border border-gray-100 mt-4">
-            <h3 className="text-2xl font-light text-gray-800 mb-8 border-b pb-4 flex items-center gap-3">
-                <span className="bg-primary/10 text-primary p-2 rounded-full">
+          <div className="max-w-xl mx-auto bg-misportDark p-8 rounded-2xl shadow-xl border border-gray-800 mt-4">
+            <h3 className="text-2xl font-bold text-white mb-8 border-b border-gray-800 pb-4 flex items-center gap-3">
+                <span className="bg-blue-900/20 text-misportBlue p-2 rounded-full">
                     <CheckCircle size={24} />
                 </span>
                 Resumen de Reserva
@@ -476,61 +475,61 @@ export const BookingWizard: React.FC = () => {
             <div className="space-y-6">
                 <div className="flex items-center gap-4">
                     <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
-                         {selectedCenter && <img src={selectedCenter.image} alt="" className="w-full h-full object-cover"/>}
+                         {selectedCenter && <img src={selectedCenter.image} alt="" className="w-full h-full object-cover opacity-80"/>}
                     </div>
                     <div>
-                         <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">Centro</p>
-                         <p className="text-xl font-bold text-gray-800">{selectedCenter?.name}</p>
+                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Centro</p>
+                         <p className="text-xl font-bold text-white">{selectedCenter?.name}</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center shrink-0 text-gray-400">
+                    <div className="w-16 h-16 bg-gray-800 rounded-lg flex items-center justify-center shrink-0 text-gray-400">
                          <Dumbbell size={28}/>
                     </div>
                     <div>
-                         <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">Entrenamiento</p>
-                         <p className="text-xl font-bold text-gray-800">{selectedType?.name}</p>
+                         <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Entrenamiento</p>
+                         <p className="text-xl font-bold text-white">{selectedType?.name}</p>
                     </div>
                 </div>
 
                 {selectedTrainer && (
                      <div className="flex items-center gap-4">
-                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0 border border-gray-700">
                             {selectedTrainer && <img src={selectedTrainer.avatar} alt="" className="w-full h-full object-cover filter grayscale contrast-125"/>}
                         </div>
                         <div>
-                            <p className="text-sm text-gray-400 font-bold uppercase tracking-wider">Entrenador</p>
-                            <p className="text-xl font-bold text-gray-800">{selectedTrainer.name}</p>
+                            <p className="text-sm text-gray-500 font-bold uppercase tracking-wider">Entrenador</p>
+                            <p className="text-xl font-bold text-white">{selectedTrainer.name}</p>
                         </div>
                     </div>
                 )}
 
-                <div className="bg-secondary/5 p-6 rounded-xl border border-secondary/10 mt-4">
+                <div className="bg-gray-800/50 p-6 rounded-xl border border-gray-700 mt-4">
                     <div className="flex justify-between items-end">
                         <div>
-                             <p className="text-sm text-gray-500 font-medium mb-1">Fecha</p>
-                             <p className="text-lg font-bold text-secondary">{new Date(state.selectedDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
+                             <p className="text-sm text-gray-400 font-medium mb-1">Fecha</p>
+                             <p className="text-lg font-bold text-white">{new Date(state.selectedDate).toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}</p>
                         </div>
                         <div className="text-right">
-                             <p className="text-sm text-gray-500 font-medium mb-1">Hora</p>
-                             <p className="text-3xl font-bold text-primary">{state.selectedTime}</p>
+                             <p className="text-sm text-gray-400 font-medium mb-1">Hora</p>
+                             <p className="text-3xl font-bold text-misportOrange">{state.selectedTime}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="mt-8 pt-6 border-t border-gray-800">
                 <button 
                     onClick={handleConfirm}
                     disabled={isSubmitting}
-                    className="w-full bg-secondary text-white py-5 rounded-xl font-bold text-lg hover:bg-slate-800 transition-all disabled:opacity-50 flex justify-center items-center shadow-lg hover:shadow-2xl transform hover:-translate-y-1"
+                    className="w-full bg-misportBlue text-white py-5 rounded-lg font-bold text-lg hover:bg-blue-600 transition-all disabled:opacity-50 flex justify-center items-center shadow-lg hover:shadow-blue-500/20 transform hover:-translate-y-1"
                 >
                     {isSubmitting ? (
                         <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                     ) : 'CONFIRMAR RESERVA'}
                 </button>
-                <p className="text-center text-xs text-gray-400 mt-4">Al confirmar aceptas nuestras políticas de cancelación.</p>
+                <p className="text-center text-xs text-gray-500 mt-4">Al confirmar aceptas nuestras políticas de cancelación.</p>
             </div>
           </div>
         )}
@@ -538,12 +537,12 @@ export const BookingWizard: React.FC = () => {
 
       {/* Footer Navigation */}
       {!isSuccess && (
-        <div className="p-6 border-t border-gray-100 bg-white flex justify-between items-center">
+        <div className="p-6 border-t border-gray-800 bg-misportDark flex justify-between items-center">
             <button 
                 onClick={handleBack}
                 disabled={state.step === 1}
                 className={`flex items-center gap-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                    state.step === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-500 hover:bg-gray-100'
+                    state.step === 1 ? 'text-gray-600 cursor-not-allowed' : 'text-gray-400 hover:text-white hover:bg-gray-800'
                 }`}
             >
                 <ChevronLeft size={20} /> Atrás
@@ -555,8 +554,8 @@ export const BookingWizard: React.FC = () => {
                  disabled={(state.step === 4 && !state.selectedTime) || (state.step === 1 && !state.centerId) || (state.step === 2 && !state.trainingTypeId)}
                  className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold transition-all shadow-md ${
                      ((state.step === 4 && !state.selectedTime) || (state.step === 1 && !state.centerId) || (state.step === 2 && !state.trainingTypeId))
-                     ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none' 
-                     : 'bg-primary text-white hover:bg-orange-600 hover:shadow-lg hover:-translate-y-0.5'
+                     ? 'bg-gray-800 text-gray-600 cursor-not-allowed shadow-none' 
+                     : 'bg-misportBlue text-white hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5'
                  }`}
              >
                  Siguiente <ChevronRight size={20} />

@@ -22,3 +22,24 @@
   -ms-overflow-style: none;  /* IE and Edge */
   scrollbar-width: none;  /* Firefox */
 }
+
+/* Base style overrides for Dark Corporate Theme */
+body {
+    background-color: #000000;
+    color: #ffffff;
+}
+
+/* Input autofill fix for dark mode */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active{
+    -webkit-box-shadow: 0 0 0 30px #1f2937 inset !important;
+    -webkit-text-fill-color: white !important;
+    caret-color: white !important;
+}
+
+/* Calendar Date Picker Dark Mode overrides */
+::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+}

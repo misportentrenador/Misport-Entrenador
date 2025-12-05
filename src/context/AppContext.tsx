@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Center, Trainer, TrainingType, User, Reservation, ScheduleRule } from '../types';
-import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, CURRENT_USER, MOCK_ADMIN, SCHEDULE_RULES } from '../constants';
+import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, MOCK_CLIENT_USER, MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 
 interface AppContextType {
   user: User | null;
@@ -13,7 +13,7 @@ interface AppContextType {
   addReservation: (reservation: Omit<Reservation, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   cancelReservation: (id: string) => void;
   isAdmin: boolean;
-  login: (email: string) => boolean;
+  login: (email: string, password?: string) => boolean;
   logout: () => void;
 }
 
@@ -31,27 +31,46 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [scheduleRules] = useState<ScheduleRule[]>(SCHEDULE_RULES);
 
-  // Simulate loading initial data or local storage
+  // Initialize from LocalStorage
   useEffect(() => {
-    // In a real app, fetch from API
     console.log("App Initialized with MISPORT Data");
+    const storedUser = localStorage.getItem('misport_user');
+    if (storedUser) {
+        try {
+            setUser(JSON.parse(storedUser));
+        } catch (e) {
+            console.error("Failed to parse user from local storage");
+            localStorage.removeItem('misport_user');
+        }
+    }
   }, []);
 
-  const login = (email: string): boolean => {
-    // Simulate Login Check
-    if (email.toLowerCase() === MOCK_ADMIN.email.toLowerCase()) {
-      setUser(MOCK_ADMIN);
-      return true;
-    } else if (email.includes('@')) {
-      // Allow any other email as client for demo purposes
-      setUser({ ...CURRENT_USER, email: email, name: email.split('@')[0] });
-      return true;
+  const login = (email: string, password?: string): boolean => {
+    const normalizedEmail = email.toLowerCase().trim();
+    
+    // 1. Check Admin Credentials
+    if (normalizedEmail === MOCK_ADMIN_USER.email.toLowerCase() && password === 'Misport123!') {
+        setUser(MOCK_ADMIN_USER);
+        localStorage.setItem('misport_user', JSON.stringify(MOCK_ADMIN_USER));
+        return true;
+    } 
+    
+    // 2. Check Client Demo Credentials
+    if (normalizedEmail === MOCK_CLIENT_USER.email.toLowerCase() && password === 'Cliente123!') {
+        setUser(MOCK_CLIENT_USER);
+        localStorage.setItem('misport_user', JSON.stringify(MOCK_CLIENT_USER));
+        return true;
     }
+
+    // 3. Fallback for testing (optional, remove in strict prod)
+    // Only allows general format if strict mock creds aren't enforced for generic testing
+    // For this request, we return false if not matching specific mocks above.
     return false;
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem('misport_user');
   };
 
   const addReservation = async (data: Omit<Reservation, 'id' | 'createdAt' | 'status'>) => {
