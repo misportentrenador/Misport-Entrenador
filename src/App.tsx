@@ -2,28 +2,39 @@ import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { BookingWizard } from './components/BookingWizard';
-import { Calendar, User, LayoutDashboard, LogOut, Menu, X, Plus, Users, MapPin, Clock, List, XCircle, AlertCircle, Filter } from 'lucide-react';
-import { UserRole } from './types';
+import { Calendar, LayoutDashboard, LogOut, Menu, X, Plus, Users, MapPin, Clock, List, XCircle, AlertCircle, Filter, ChevronRight, Lock } from 'lucide-react';
 
-// --- Protected Route Component ---
-const ProtectedRoute = ({ children, allowedRoles }: { children: React.ReactNode, allowedRoles: UserRole[] }) => {
+// --- ROUTE GUARDS ---
+
+const RequireAuth = ({ children }: { children?: React.ReactNode }) => {
     const { user } = useApp();
     const location = useLocation();
 
     if (!user) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
+    return <>{children}</>;
+};
 
-    if (!allowedRoles.includes(user.role)) {
-        // Redirect to their default dashboard if they try to access unauthorized page
-        return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/'} replace />;
+const RequireAdmin = ({ children }: { children?: React.ReactNode }) => {
+    const { user } = useApp();
+    
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (user.role !== 'ADMIN') {
+        // Silent redirect to home if a client tries to access admin
+        return <Navigate to="/" replace />;
     }
 
     return <>{children}</>;
 };
 
-// --- Dashboard Component (CLIENT) ---
-const Dashboard: React.FC = () => {
+// --- SCREENS ---
+
+// 1. CLIENT DASHBOARD
+const ClientDashboard: React.FC = () => {
     const { user, reservations, centers, cancelReservation } = useApp();
     // Filter strictly by user ID
     const myReservations = reservations
@@ -106,7 +117,7 @@ const Dashboard: React.FC = () => {
     );
 };
 
-// --- Admin Dashboard Component ---
+// 2. ADMIN DASHBOARD
 const AdminDashboard: React.FC = () => {
     const { reservations, centers, trainers, scheduleRules } = useApp();
     const [filterCenter, setFilterCenter] = useState<string>('all');
@@ -146,7 +157,6 @@ const AdminDashboard: React.FC = () => {
                         className="bg-misportDark border border-gray-700 text-white p-2.5 rounded-lg w-full sm:w-auto shadow-sm focus:border-misportBlue focus:ring-1 focus:ring-misportBlue outline-none text-sm"
                         value={filterDate}
                         onChange={(e) => setFilterDate(e.target.value)}
-                        placeholder="Filtrar por fecha"
                     />
                     {filterDate && (
                         <button onClick={() => setFilterDate('')} className="text-xs text-red-400 hover:text-red-300 underline">
@@ -221,7 +231,7 @@ const AdminDashboard: React.FC = () => {
                                     return (
                                         <tr key={r.id} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
                                             <td className="px-6 py-4 font-medium text-white whitespace-nowrap">{r.date} <span className="text-gray-500 ml-1">{r.startTime}</span></td>
-                                            <td className="px-6 py-4">{r.userId === 'u_client_demo' ? 'Cliente Demo' : r.userId}</td>
+                                            <td className="px-6 py-4">{r.userId}</td>
                                             <td className="px-6 py-4">{center?.name}</td>
                                             <td className="px-6 py-4">{trainer?.name || '-'}</td>
                                             <td className="px-6 py-4">
@@ -245,106 +255,52 @@ const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
             )}
-
-            {/* Tab Content: CENTROS */}
-            {activeTab === 'centros' && (
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {centers.map(center => (
-                        <div key={center.id} className="group bg-misportDark rounded-xl shadow-lg border border-gray-800 overflow-hidden hover:border-misportBlue/50 transition-all">
-                            <div className="h-40 overflow-hidden relative">
-                                <img src={center.image} alt={center.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"/>
-                                <div className="absolute top-2 right-2">
-                                     <span className={`px-2 py-1 rounded text-xs font-bold shadow-sm ${center.isActive ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-                                        {center.isActive ? 'ACTIVO' : 'INACTIVO'}
-                                     </span>
-                                </div>
-                            </div>
-                            <div className="p-5">
-                                <h3 className="font-bold text-lg text-white">{center.name}</h3>
-                                <p className="text-sm text-gray-400 flex items-center gap-1 mt-1"><MapPin size={14} className="text-misportBlue"/> {center.address}</p>
-                                <p className="text-sm text-gray-500 mt-3 line-clamp-2">{center.description}</p>
-                            </div>
-                        </div>
-                    ))}
-                 </div>
-            )}
-
-            {/* Tab Content: ENTRENADORES */}
-            {activeTab === 'entrenadores' && (
-                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {trainers.map(trainer => (
-                        <div key={trainer.id} className="bg-misportDark rounded-xl shadow-lg border border-gray-800 overflow-hidden hover:border-misportBlue/50 transition-all text-center pb-4">
-                            <div className="aspect-[4/5] relative overflow-hidden bg-gray-900">
-                                <img src={trainer.avatar} alt={trainer.name} className="w-full h-full object-cover filter grayscale contrast-125 hover:grayscale-0 transition-all duration-500"/>
-                            </div>
-                            <div className="mt-4 px-4">
-                                <h3 className="font-bold text-white">{trainer.name}</h3>
-                                <p className="text-xs text-gray-500 uppercase tracking-wider mt-1">{trainer.specialties.length} Especialidades</p>
-                                <div className="mt-3 flex justify-center gap-2">
-                                    <span className={`w-2 h-2 rounded-full ${trainer.isActive ? 'bg-green-500' : 'bg-red-500'}`}></span>
-                                    <span className="text-xs text-gray-400">{trainer.isActive ? 'Disponible' : 'No disponible'}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-                 </div>
-            )}
         </div>
     );
 };
 
-// --- Login Screen ---
+// 3. LOGIN SCREEN
 const LoginScreen: React.FC = () => {
     const { login, user } = useApp();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
-    // Redirect if already logged in
     if (user) {
         return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/'} replace />;
     }
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         if (!email || !password) {
             setError('Por favor completa todos los campos');
             return;
         }
         
-        const success = login(email, password);
-        if (!success) {
-            setError('Credenciales inválidas. Verifica tu email y contraseña.');
+        const result = login(email, password);
+        if (!result.success) {
+            setError(result.message || 'Credenciales inválidas');
         }
     };
 
     return (
         <div className="min-h-screen bg-misportBlack flex items-center justify-center p-4 relative overflow-hidden">
-             {/* Abstract Background Element */}
+            {/* Background */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-                <div className="absolute -top-[10%] -right-[10%] w-[50%] h-[50%] bg-misportBlue/20 rounded-full blur-[120px]"></div>
-                <div className="absolute -bottom-[10%] -left-[10%] w-[50%] h-[50%] bg-misportOrange/10 rounded-full blur-[120px]"></div>
+                <div className="absolute -top-[10%] -right-[10%] w-[50%] h-[50%] bg-misportBlue/10 rounded-full blur-[120px]"></div>
+                <div className="absolute -bottom-[10%] -left-[10%] w-[50%] h-[50%] bg-misportOrange/5 rounded-full blur-[120px]"></div>
             </div>
 
             <div className="bg-misportDark rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-800 relative z-10">
                 <div className="text-center mb-8">
-                    <div className="w-24 h-auto mx-auto mb-6">
-                        {/* Using IMG tag for logo as requested */}
-                        <img 
-                            src="/misport-logo.png" 
-                            alt="MISPORT Logo" 
-                            className="w-full h-full object-contain"
-                            onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                                e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                            }}
-                        />
-                        <div className="hidden flex items-center justify-center w-16 h-16 bg-misportBlue rounded-full mx-auto text-white">
-                            <Users size={32} />
-                        </div>
-                    </div>
-                    <h1 className="text-3xl font-bold text-white mb-1">BIENVENIDO</h1>
-                    <p className="text-gray-400 font-medium text-sm">Accede a tu cuenta MISPORT</p>
+                     <img 
+                        src="/misport-logo.png" 
+                        alt="MISPORT Logo" 
+                        className="w-40 h-auto object-contain mx-auto mb-6"
+                    />
+                    <h1 className="text-2xl font-bold text-white mb-1">INICIAR SESIÓN</h1>
+                    <p className="text-gray-400 font-medium text-sm">Accede a tu cuenta</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
@@ -355,7 +311,7 @@ const LoginScreen: React.FC = () => {
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             className="w-full p-3.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all"
-                            placeholder="usuario@misport.com"
+                            placeholder="tu@email.com"
                         />
                     </div>
                     <div>
@@ -375,28 +331,107 @@ const LoginScreen: React.FC = () => {
                         type="submit"
                         className="w-full bg-misportBlue hover:bg-blue-600 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-blue-600/20 transform hover:-translate-y-0.5 mt-2"
                     >
-                        INICIAR SESIÓN
+                        ENTRAR
                     </button>
                 </form>
 
                 <div className="mt-8 pt-6 border-t border-gray-800 text-center">
-                    <p className="text-xs text-gray-500 font-medium uppercase tracking-wide mb-3">Accesos de demostración</p>
-                    <div className="text-sm text-gray-400 space-y-3 bg-gray-900/50 p-4 rounded-lg border border-gray-800 text-left">
-                        <div className="flex justify-between items-center border-b border-gray-800 pb-2">
-                            <span>Admin:</span> 
-                            <div className="text-right">
-                                <span className="font-mono text-white block">admin@misport.es</span>
-                                <span className="text-xs text-gray-600">Pass: Misport123!</span>
-                            </div>
-                        </div>
-                        <div className="flex justify-between items-center">
-                            <span>Usuario:</span> 
-                            <div className="text-right">
-                                <span className="font-mono text-white block">cliente@misport.es</span>
-                                <span className="text-xs text-gray-600">Pass: Cliente123!</span>
-                            </div>
-                        </div>
+                    <p className="text-sm text-gray-500">
+                        ¿No tienes cuenta? <Link to="/register" className="text-misportBlue hover:text-white font-bold transition-colors">Regístrate aquí</Link>
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// 4. REGISTER SCREEN
+const RegisterScreen: React.FC = () => {
+    const { register, user } = useApp();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    if (user) {
+        return <Navigate to="/" replace />;
+    }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+
+        if (!name || !email || !password) {
+            setError('Todos los campos son obligatorios');
+            return;
+        }
+
+        if (password.length < 6) {
+            setError('La contraseña debe tener al menos 6 caracteres');
+            return;
+        }
+
+        const result = register(name, email, password);
+        if (!result.success) {
+            setError(result.message || 'Error al registrarse');
+        }
+    };
+
+    return (
+        <div className="min-h-screen bg-misportBlack flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="bg-misportDark rounded-2xl shadow-2xl p-8 w-full max-w-md border border-gray-800 relative z-10">
+                <div className="text-center mb-6">
+                     <img src="/misport-logo.png" alt="MISPORT" className="w-32 h-auto object-contain mx-auto mb-4"/>
+                    <h1 className="text-2xl font-bold text-white mb-1">CREAR CUENTA</h1>
+                    <p className="text-gray-400 font-medium text-sm">Únete a MISPORT Solution Training</p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Nombre Completo</label>
+                        <input 
+                            type="text" 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="w-full p-3.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all"
+                            placeholder="Tu nombre"
+                        />
                     </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Correo electrónico</label>
+                        <input 
+                            type="email" 
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="w-full p-3.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all"
+                            placeholder="tu@email.com"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Contraseña</label>
+                        <input 
+                            type="password" 
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="w-full p-3.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all"
+                            placeholder="Mínimo 6 caracteres"
+                        />
+                    </div>
+                    
+                    {error && <p className="text-red-400 text-sm text-center bg-red-900/20 p-2 rounded">{error}</p>}
+
+                    <button 
+                        type="submit"
+                        className="w-full bg-misportOrange hover:bg-orange-600 text-white font-bold py-4 rounded-lg transition-all shadow-lg hover:shadow-orange-500/20 transform hover:-translate-y-0.5 mt-2"
+                    >
+                        REGISTRARSE
+                    </button>
+                </form>
+
+                <div className="mt-6 pt-6 border-t border-gray-800 text-center">
+                    <p className="text-sm text-gray-500">
+                        ¿Ya tienes cuenta? <Link to="/login" className="text-misportBlue hover:text-white font-bold transition-colors">Inicia sesión</Link>
+                    </p>
                 </div>
             </div>
         </div>
@@ -404,96 +439,95 @@ const LoginScreen: React.FC = () => {
 };
 
 
-// --- Layout & Main App ---
+// --- LAYOUT & MAIN ---
 const Layout: React.FC = () => {
     const { user, logout, isAdmin } = useApp();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     return (
         <div className="min-h-screen bg-misportBlack flex flex-col font-sans text-gray-200">
-            {/* Navbar */}
-            <nav className="bg-misportBlack border-b border-gray-800 sticky top-0 z-50 shadow-md">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between h-20">
-                        <div className="flex items-center">
-                            <Link to="/" className="flex items-center gap-3 group">
-                                <div className="h-10 w-auto">
-                                    <img src="/misport-logo.png" alt="MISPORT" className="h-full w-auto object-contain" />
-                                </div>
-                                <span className="text-white font-bold text-xl tracking-tight hidden sm:block group-hover:text-misportBlue transition-colors">
-                                    SOLUTION TRAINING
-                                </span>
-                            </Link>
-                        </div>
-                        
-                        {/* Desktop Menu */}
-                        {user && (
+            {/* Navbar (Only visible if logged in) */}
+            {user && (
+                <nav className="bg-misportBlack border-b border-gray-800 sticky top-0 z-50 shadow-md">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between h-20">
+                            <div className="flex items-center">
+                                <Link to="/" className="flex items-center gap-3 group">
+                                    <div className="h-10 w-auto">
+                                        <img src="/misport-logo.png" alt="MISPORT" className="h-full w-auto object-contain" />
+                                    </div>
+                                    <span className="text-white font-bold text-xl tracking-tight hidden sm:block group-hover:text-misportBlue transition-colors">
+                                        SOLUTION TRAINING
+                                    </span>
+                                </Link>
+                            </div>
+                            
+                            {/* Desktop Menu */}
                             <div className="hidden md:flex items-center space-x-8">
                                 <Link to="/" className="text-gray-300 hover:text-misportBlue font-medium transition-colors text-sm uppercase tracking-wide">Inicio</Link>
                                 {!isAdmin && <Link to="/book" className="text-gray-300 hover:text-misportBlue font-medium transition-colors text-sm uppercase tracking-wide">Reservar</Link>}
-                                {isAdmin && <Link to="/admin" className="text-misportBlue font-bold transition-colors text-sm uppercase tracking-wide">Administración</Link>}
+                                {isAdmin && <Link to="/admin" className="text-misportBlue font-bold transition-colors text-sm uppercase tracking-wide flex items-center gap-1"><Lock size={14}/> Administración</Link>}
                                 <div className="flex items-center gap-4 ml-6 pl-6 border-l border-gray-800">
                                     <div className="text-right">
                                         <span className="block text-sm font-bold text-white leading-tight">{user.name}</span>
-                                        <span className="block text-xs text-misportBlue uppercase tracking-wider">{user.role === 'ADMIN' ? 'Administrador' : 'Cliente'}</span>
+                                        <span className="block text-xs text-gray-500 uppercase tracking-wider">{isAdmin ? 'Administrador' : 'Cliente'}</span>
                                     </div>
                                     <button onClick={logout} title="Salir" className="text-gray-400 hover:text-red-500 transition-colors bg-gray-900 p-2.5 rounded-full border border-gray-800 hover:border-red-900">
                                         <LogOut size={18} />
                                     </button>
                                 </div>
                             </div>
-                        )}
 
-                        {/* Mobile Button */}
-                        {user && (
+                            {/* Mobile Button */}
                             <div className="md:hidden flex items-center">
                                 <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-300 hover:text-white p-2">
                                     {mobileMenuOpen ? <X /> : <Menu />}
                                 </button>
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Mobile Menu */}
-                {mobileMenuOpen && user && (
-                    <div className="md:hidden bg-misportDark border-b border-gray-800 p-4 space-y-4 shadow-xl absolute w-full z-50">
-                        <div className="pb-4 border-b border-gray-800 mb-4">
-                             <p className="font-bold text-white">{user.name}</p>
-                             <p className="text-xs text-gray-500">{user.email}</p>
                         </div>
-                        <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white font-medium py-2">INICIO</Link>
-                        {!isAdmin && <Link to="/book" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white font-medium py-2">RESERVAR</Link>}
-                        {isAdmin && <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block text-misportBlue font-bold py-2">ADMINISTRACIÓN</Link>}
-                        <button onClick={logout} className="text-red-400 font-medium w-full text-left py-2 flex items-center gap-2 mt-4"><LogOut size={16}/> Cerrar Sesión</button>
                     </div>
-                )}
-            </nav>
+
+                    {/* Mobile Menu */}
+                    {mobileMenuOpen && (
+                        <div className="md:hidden bg-misportDark border-b border-gray-800 p-4 space-y-4 shadow-xl absolute w-full z-50">
+                            <div className="pb-4 border-b border-gray-800 mb-4">
+                                <p className="font-bold text-white">{user.name}</p>
+                                <p className="text-xs text-gray-500">{user.email}</p>
+                            </div>
+                            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white font-medium py-2">INICIO</Link>
+                            {!isAdmin && <Link to="/book" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white font-medium py-2">RESERVAR</Link>}
+                            {isAdmin && <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block text-misportBlue font-bold py-2">ADMINISTRACIÓN</Link>}
+                            <button onClick={logout} className="text-red-400 font-medium w-full text-left py-2 flex items-center gap-2 mt-4"><LogOut size={16}/> Cerrar Sesión</button>
+                        </div>
+                    )}
+                </nav>
+            )}
 
             <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
                 <Routes>
                     <Route path="/login" element={<LoginScreen />} />
+                    <Route path="/register" element={<RegisterScreen />} />
                     
                     {/* Protected Client Routes */}
                     <Route path="/" element={
-                        <ProtectedRoute allowedRoles={['CLIENT']}>
-                            <Dashboard />
-                        </ProtectedRoute>
+                        <RequireAuth>
+                            <ClientDashboard />
+                        </RequireAuth>
                     } />
                     <Route path="/book" element={
-                        <ProtectedRoute allowedRoles={['CLIENT']}>
+                        <RequireAuth>
                             <BookingWizard />
-                        </ProtectedRoute>
+                        </RequireAuth>
                     } />
                     
                     {/* Protected Admin Routes */}
                     <Route path="/admin" element={
-                        <ProtectedRoute allowedRoles={['ADMIN']}>
+                        <RequireAdmin>
                             <AdminDashboard />
-                        </ProtectedRoute>
+                        </RequireAdmin>
                     } />
 
-                    {/* Catch all - Redirect based on role or to login */}
+                    {/* Catch all */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </main>

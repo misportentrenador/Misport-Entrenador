@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Center, Trainer, TrainingType, User, Reservation, ScheduleRule } from '../types';
-import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, MOCK_CLIENT_USER, MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
+import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 
 interface AppContextType {
   user: User | null;
@@ -13,7 +13,8 @@ interface AppContextType {
   addReservation: (reservation: Omit<Reservation, 'id' | 'createdAt' | 'status'>) => Promise<void>;
   cancelReservation: (id: string) => void;
   isAdmin: boolean;
-  login: (email: string, password?: string) => boolean;
+  login: (email: string, password?: string) => { success: boolean; message?: string };
+  register: (name: string, email: string, password: string) => { success: boolean; message?: string };
   logout: () => void;
 }
 
@@ -25,53 +26,117 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  
+  // Static data
   const [centers] = useState<Center[]>(MOCK_CENTERS);
   const [trainingTypes] = useState<TrainingType[]>(MOCK_TRAINING_TYPES);
   const [trainers] = useState<Trainer[]>(MOCK_TRAINERS);
-  const [reservations, setReservations] = useState<Reservation[]>([]);
   const [scheduleRules] = useState<ScheduleRule[]>(SCHEDULE_RULES);
+  
+  // Dynamic data
+  const [reservations, setReservations] = useState<Reservation[]>([]);
 
-  // Initialize from LocalStorage
+  // Initialize Session
   useEffect(() => {
-    console.log("App Initialized with MISPORT Data");
-    const storedUser = localStorage.getItem('misport_user');
-    if (storedUser) {
+    // 1. Load active session
+    const sessionUser = localStorage.getItem('misport_session');
+    if (sessionUser) {
         try {
-            setUser(JSON.parse(storedUser));
+            setUser(JSON.parse(sessionUser));
         } catch (e) {
-            console.error("Failed to parse user from local storage");
-            localStorage.removeItem('misport_user');
+            localStorage.removeItem('misport_session');
+        }
+    }
+
+    // 2. Load reservations (simulating DB persistence)
+    const storedReservations = localStorage.getItem('misport_reservations');
+    if (storedReservations) {
+        try {
+            setReservations(JSON.parse(storedReservations));
+        } catch (e) {
+            console.error("Failed to load reservations");
         }
     }
   }, []);
 
-  const login = (email: string, password?: string): boolean => {
+  // Save reservations on change
+  useEffect(() => {
+    localStorage.setItem('misport_reservations', JSON.stringify(reservations));
+  }, [reservations]);
+
+  // --- AUTH ACTIONS ---
+
+  const login = (email: string, password?: string): { success: boolean; message?: string } => {
     const normalizedEmail = email.toLowerCase().trim();
     
-    // 1. Check Admin Credentials
+    // 1. Check Hardcoded Admin Credentials
     if (normalizedEmail === MOCK_ADMIN_USER.email.toLowerCase() && password === 'Misport123!') {
         setUser(MOCK_ADMIN_USER);
-        localStorage.setItem('misport_user', JSON.stringify(MOCK_ADMIN_USER));
-        return true;
+        localStorage.setItem('misport_session', JSON.stringify(MOCK_ADMIN_USER));
+        return { success: true };
     } 
-    
-    // 2. Check Client Demo Credentials
-    if (normalizedEmail === MOCK_CLIENT_USER.email.toLowerCase() && password === 'Cliente123!') {
-        setUser(MOCK_CLIENT_USER);
-        localStorage.setItem('misport_user', JSON.stringify(MOCK_CLIENT_USER));
-        return true;
+
+    // 2. Check LocalStorage Users (Clients)
+    const storedUsersString = localStorage.getItem('misport_db_users');
+    if (storedUsersString) {
+        const users: (User & { password: string })[] = JSON.parse(storedUsersString);
+        const foundUser = users.find(u => u.email.toLowerCase() === normalizedEmail);
+
+        if (foundUser) {
+            if (foundUser.password === password) {
+                // Remove password before setting state
+                const { password: _, ...safeUser } = foundUser; 
+                setUser(safeUser);
+                localStorage.setItem('misport_session', JSON.stringify(safeUser));
+                return { success: true };
+            } else {
+                return { success: false, message: 'Contraseña incorrecta.' };
+            }
+        }
     }
 
-    // 3. Fallback for testing (optional, remove in strict prod)
-    // Only allows general format if strict mock creds aren't enforced for generic testing
-    // For this request, we return false if not matching specific mocks above.
-    return false;
+    return { success: false, message: 'Usuario no encontrado.' };
+  };
+
+  const register = (name: string, email: string, password: string): { success: boolean; message?: string } => {
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check if user already exists in DB
+    const storedUsersString = localStorage.getItem('misport_db_users');
+    let users: (User & { password: string })[] = storedUsersString ? JSON.parse(storedUsersString) : [];
+
+    if (users.some(u => u.email.toLowerCase() === normalizedEmail) || normalizedEmail === MOCK_ADMIN_USER.email.toLowerCase()) {
+        return { success: false, message: 'Este correo electrónico ya está registrado.' };
+    }
+
+    // Create new user
+    const newUser: User & { password: string } = {
+        id: `u_${Date.now()}`,
+        name,
+        email: normalizedEmail,
+        phone: '', // Optional in register form for now
+        role: 'CLIENT',
+        password // Storing plaintext for demo requirements (In prod use hashing)
+    };
+
+    // Save to "DB"
+    users.push(newUser);
+    localStorage.setItem('misport_db_users', JSON.stringify(users));
+
+    // Auto Login
+    const { password: _, ...safeUser } = newUser;
+    setUser(safeUser);
+    localStorage.setItem('misport_session', JSON.stringify(safeUser));
+
+    return { success: true };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('misport_user');
+    localStorage.removeItem('misport_session');
   };
+
+  // --- RESERVATION ACTIONS ---
 
   const addReservation = async (data: Omit<Reservation, 'id' | 'createdAt' | 'status'>) => {
     const newReservation: Reservation = {
@@ -82,7 +147,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     };
     
     // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 500));
     setReservations(prev => [...prev, newReservation]);
   };
 
@@ -104,6 +169,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       cancelReservation,
       isAdmin,
       login,
+      register,
       logout
     }}>
       {children}
