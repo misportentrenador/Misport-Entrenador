@@ -10,7 +10,7 @@ interface AppContextType {
   trainers: Trainer[];
   reservations: Reservation[];
   scheduleRules: ScheduleRule[];
-  addReservation: (reservation: Omit<Reservation, 'id' | 'createdAt' | 'status'>) => Promise<void>;
+  addReservation: (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail'>) => Promise<void>;
   cancelReservation: (id: string) => void;
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
@@ -36,7 +36,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Dynamic data
   const [reservations, setReservations] = useState<Reservation[]>([]);
 
-  // Initialize Session
+  // Initialize Session and Data
   useEffect(() => {
     // 1. Load active session
     const sessionUser = localStorage.getItem('misport_session');
@@ -48,20 +48,23 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         }
     }
 
-    // 2. Load reservations (simulating DB persistence)
+    // 2. Load reservations from localStorage (misport_reservas)
     const storedReservations = localStorage.getItem('misport_reservations');
     if (storedReservations) {
         try {
             setReservations(JSON.parse(storedReservations));
         } catch (e) {
-            console.error("Failed to load reservations");
+            console.error("Failed to load reservations, initializing empty.");
+            setReservations([]);
         }
     }
   }, []);
 
-  // Save reservations on change
+  // Persist reservations whenever they change
   useEffect(() => {
-    localStorage.setItem('misport_reservations', JSON.stringify(reservations));
+    if (reservations.length > 0) {
+        localStorage.setItem('misport_reservations', JSON.stringify(reservations));
+    }
   }, [reservations]);
 
   // --- AUTH ACTIONS ---
@@ -138,21 +141,38 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   // --- RESERVATION ACTIONS ---
 
-  const addReservation = async (data: Omit<Reservation, 'id' | 'createdAt' | 'status'>) => {
+  const addReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail'>) => {
+    if (!user) {
+        console.error("Cannot add reservation without user");
+        return;
+    }
+
     const newReservation: Reservation = {
-      ...data,
-      id: Math.random().toString(36).substr(2, 9),
+      ...reservationData,
+      id: `r_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      userName: user.name,
+      userEmail: user.email,
       createdAt: Date.now(),
       status: 'CONFIRMED'
     };
     
-    // Simulate network delay
+    // Simulate network delay for UX
     await new Promise(resolve => setTimeout(resolve, 500));
-    setReservations(prev => [...prev, newReservation]);
+    
+    setReservations(prev => {
+        const updated = [...prev, newReservation];
+        // Explicitly save to localStorage here as well to ensure sync
+        localStorage.setItem('misport_reservations', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const cancelReservation = (id: string) => {
-    setReservations(prev => prev.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r));
+    setReservations(prev => {
+        const updated = prev.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r);
+        localStorage.setItem('misport_reservations', JSON.stringify(updated));
+        return updated;
+    });
   };
 
   const isAdmin = user?.role === 'ADMIN';

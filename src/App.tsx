@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
@@ -231,7 +232,12 @@ const AdminDashboard: React.FC = () => {
                                     return (
                                         <tr key={r.id} className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
                                             <td className="px-6 py-4 font-medium text-white whitespace-nowrap">{r.date} <span className="text-gray-500 ml-1">{r.startTime}</span></td>
-                                            <td className="px-6 py-4">{r.userId}</td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-col">
+                                                    <span className="text-white font-medium">{r.userName || r.userId}</span>
+                                                    <span className="text-xs text-gray-500">{r.userEmail}</span>
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4">{center?.name}</td>
                                             <td className="px-6 py-4">{trainer?.name || '-'}</td>
                                             <td className="px-6 py-4">

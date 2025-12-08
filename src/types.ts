@@ -42,6 +42,8 @@ export type ReservationStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 export interface Reservation {
   id: string;
   userId: string;
+  userName: string; // Added for easier Admin display
+  userEmail: string; // Added for easier Admin display
   centerId: string;
   trainingTypeId: string;
   trainerId?: string; // Optional if training doesn't require specific trainer
