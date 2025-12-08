@@ -121,8 +121,9 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
     trainingTypeId: 't_group',
     trainerId: undefined, // Indiferente
     daysOfWeek: [1, 3], // Lun, Mie
+    // UPDATED: Start at 19:00 instead of 18:00
     ranges: [
-        { start: '18:00', end: '21:00' } // 18, 19, 20 start times (last session ends 21:00)
+        { start: '19:00', end: '21:00' } // 19, 20 start times (last session ends 21:00)
     ]
   },
   {
