@@ -12,6 +12,7 @@ interface AppContextType {
   scheduleRules: ScheduleRule[];
   addReservation: (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail'>) => Promise<void>;
   cancelReservation: (id: string) => void;
+  getOccupancy: (centerId: string, trainingTypeId: string, trainerId: string | null, date: string, time: string) => number;
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
   register: (name: string, email: string, password: string) => { success: boolean; message?: string };
@@ -175,6 +176,29 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     });
   };
 
+  // --- OCCUPANCY HELPER ---
+  const getOccupancy = (centerId: string, trainingTypeId: string, trainerId: string | null, date: string, time: string): number => {
+      // 1. Base filter: Active reservations at this center, date, time
+      let relevantReservations = reservations.filter(r => 
+          r.status === 'CONFIRMED' &&
+          r.centerId === centerId &&
+          r.date === date &&
+          r.startTime === time
+      );
+
+      // 2. Trainer Logic
+      if (trainerId) {
+          // If a specific trainer is selected, count reservations for that trainer.
+          // (Usually for Personal Training, capacity is 1)
+          relevantReservations = relevantReservations.filter(r => r.trainerId === trainerId);
+      } else {
+          // If no trainer (Group Training), count reservations for that specific service type.
+          relevantReservations = relevantReservations.filter(r => r.trainingTypeId === trainingTypeId);
+      }
+
+      return relevantReservations.length;
+  };
+
   const isAdmin = user?.role === 'ADMIN';
 
   return (
@@ -187,6 +211,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       scheduleRules,
       addReservation,
       cancelReservation,
+      getOccupancy,
       isAdmin,
       login,
       register,

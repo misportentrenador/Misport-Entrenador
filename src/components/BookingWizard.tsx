@@ -25,7 +25,7 @@ const STEPS = [
 ];
 
 export const BookingWizard: React.FC = () => {
-  const { centers, trainingTypes, trainers, addReservation, reservations, user, scheduleRules } = useApp();
+  const { centers, trainingTypes, trainers, addReservation, getOccupancy, user, scheduleRules } = useApp();
   
   const [state, setState] = useState<BookingState>({
     step: 1,
@@ -129,10 +129,8 @@ export const BookingWizard: React.FC = () => {
           const m = currentMin % 60;
           const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
           
-          if (checkAvailability(timeString)) {
-            if (!slots.includes(timeString)) {
-                slots.push(timeString);
-            }
+          if (!slots.includes(timeString)) {
+             slots.push(timeString);
           }
           currentMin += duration;
         }
@@ -140,28 +138,7 @@ export const BookingWizard: React.FC = () => {
     });
 
     return slots.sort();
-  }, [state.selectedDate, state.centerId, state.trainingTypeId, state.trainerId, selectedType, reservations, scheduleRules]);
-
-  function checkAvailability(time: string): boolean {
-    const conflicts = reservations.filter(r => 
-      r.date === state.selectedDate &&
-      r.startTime === time && 
-      r.centerId === state.centerId && 
-      r.status !== 'CANCELLED'
-    );
-
-    if (state.trainerId) {
-      const trainerBusy = conflicts.some(r => r.trainerId === state.trainerId);
-      if (trainerBusy) return false;
-    }
-
-    const sameServiceConflicts = conflicts.filter(r => r.trainingTypeId === state.trainingTypeId);
-    if (selectedType && sameServiceConflicts.length >= selectedType.capacity) {
-        return false;
-    }
-
-    return true;
-  }
+  }, [state.selectedDate, state.centerId, state.trainingTypeId, state.trainerId, selectedType, scheduleRules]);
 
   useEffect(() => {
     if (selectedType) {
@@ -437,20 +414,34 @@ export const BookingWizard: React.FC = () => {
             <div className="w-full lg:w-1/2">
                 <label className="block text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">2. Selecciona la hora</label>
                 {timeSlots.length > 0 ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-                        {timeSlots.map(time => (
-                            <button
-                                key={time}
-                                onClick={() => setState(prev => ({ ...prev, selectedTime: time }))}
-                                className={`py-3 px-2 rounded-lg text-sm font-bold transition-all duration-200 ${
-                                    state.selectedTime === time 
-                                    ? 'bg-misportBlue text-white shadow-lg transform scale-105' 
-                                    : 'bg-misportDark border border-gray-700 text-gray-400 hover:border-misportBlue hover:text-misportBlue hover:bg-gray-800'
-                                }`}
-                            >
-                                {time}
-                            </button>
-                        ))}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+                        {timeSlots.map(time => {
+                            const occupancy = state.centerId && state.trainingTypeId 
+                                ? getOccupancy(state.centerId, state.trainingTypeId, state.trainerId, state.selectedDate, time) 
+                                : 0;
+                            const capacity = selectedType?.capacity || 1;
+                            const isFull = occupancy >= capacity;
+                            
+                            return (
+                                <button
+                                    key={time}
+                                    onClick={() => !isFull && setState(prev => ({ ...prev, selectedTime: time }))}
+                                    disabled={isFull}
+                                    className={`py-3 px-2 rounded-lg text-sm font-bold transition-all duration-200 flex flex-col items-center justify-center border ${
+                                        state.selectedTime === time 
+                                        ? 'bg-misportBlue text-white shadow-lg transform scale-105 border-misportBlue' 
+                                        : isFull
+                                            ? 'bg-gray-800 text-gray-600 border-gray-800 cursor-not-allowed opacity-60'
+                                            : 'bg-misportDark text-gray-400 border-gray-700 hover:border-misportBlue hover:text-misportBlue hover:bg-gray-800'
+                                    }`}
+                                >
+                                    <span>{time}</span>
+                                    <span className={`text-[10px] mt-1 font-normal ${isFull ? 'text-red-500' : 'text-gray-500'}`}>
+                                        {isFull ? 'COMPLETO' : `(${occupancy}/${capacity})`}
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="h-64 flex flex-col items-center justify-center bg-gray-900/30 rounded-xl border-2 border-dashed border-gray-800 text-gray-600">
