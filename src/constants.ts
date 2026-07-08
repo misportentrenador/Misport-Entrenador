@@ -1,5 +1,5 @@
 
-import { Center, Trainer, TrainingType, User, ScheduleRule } from "./types";
+import { Center, Trainer, TrainingType, User, ScheduleRule, FinanceParams, FinanceServiceName } from "./types";
 
 // --- 1. CENTROS ---
 export const MOCK_CENTERS: Center[] = [
@@ -263,4 +263,27 @@ export const MOCK_ADMIN_USER: User = {
   email: 'admin@misport.es',
   phone: '000000000',
   role: 'ADMIN'
+};
+
+// --- FINANCE MODULE DEFAULTS ---
+
+// Extra option for sessions with no physical center (online training)
+export const FINANCE_ONLINE_CENTER = 'Online / Sin centro';
+
+export const FINANCE_SERVICES: FinanceServiceName[] = [
+  'Electroestimulación',
+  'Entrenamiento online',
+  'Entrenamiento grupal',
+];
+
+export const DEFAULT_FINANCE_PARAMS: FinanceParams = {
+  igic: 0.07,
+  profitTax: 0.2,
+  electro: { price: 30, trainerPay: 8, centerPay: 8 },
+  online: { price: 50, trainerPay: 30, centerPay: 0 },
+  group: [
+    { days: 1, price: 40, trainerPay: 16, centerPay: 0 },
+    { days: 2, price: 50, trainerPay: 20, centerPay: 0 },
+    { days: 3, price: 60, trainerPay: 24, centerPay: 0 },
+  ],
 };

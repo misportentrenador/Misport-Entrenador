@@ -2,8 +2,10 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { FinanceProvider } from './context/FinanceContext';
 import { BookingWizard } from './components/BookingWizard';
-import { Calendar, LayoutDashboard, LogOut, Menu, X, Plus, Users, MapPin, Clock, List, XCircle, AlertCircle, Filter, ChevronRight, Lock } from 'lucide-react';
+import { FinancePanel } from './components/FinancePanel';
+import { Calendar, LayoutDashboard, LogOut, Menu, X, Plus, Users, MapPin, Clock, List, XCircle, AlertCircle, Filter, ChevronRight, Lock, Euro } from 'lucide-react';
 
 // --- ROUTE GUARDS ---
 
@@ -123,7 +125,7 @@ const AdminDashboard: React.FC = () => {
     const { reservations, centers, trainers, scheduleRules } = useApp();
     const [filterCenter, setFilterCenter] = useState<string>('all');
     const [filterDate, setFilterDate] = useState<string>('');
-    const [activeTab, setActiveTab] = useState<'reservas' | 'centros' | 'entrenadores'>('reservas');
+    const [activeTab, setActiveTab] = useState<'reservas' | 'centros' | 'entrenadores' | 'finanzas'>('reservas');
 
     // Admin sees ALL reservations, filtered by UI controls
     const filteredReservations = reservations.filter(r => {
@@ -187,8 +189,8 @@ const AdminDashboard: React.FC = () => {
 
             {/* Navigation Tabs */}
             <div className="flex border-b border-gray-800 overflow-x-auto">
-                {['reservas', 'centros', 'entrenadores'].map((tab) => (
-                    <button 
+                {['reservas', 'centros', 'entrenadores', 'finanzas'].map((tab) => (
+                    <button
                         key={tab}
                         onClick={() => setActiveTab(tab as any)}
                         className={`px-8 py-4 font-medium text-sm transition-colors relative capitalize whitespace-nowrap ${activeTab === tab ? 'text-misportBlue' : 'text-gray-500 hover:text-gray-300'}`}
@@ -197,6 +199,7 @@ const AdminDashboard: React.FC = () => {
                             {tab === 'reservas' && <List size={16}/>}
                             {tab === 'centros' && <MapPin size={16}/>}
                             {tab === 'entrenadores' && <Users size={16}/>}
+                            {tab === 'finanzas' && <Euro size={16}/>}
                             {tab}
                         </span>
                         {activeTab === tab && <div className="absolute bottom-0 left-0 w-full h-0.5 bg-misportBlue shadow-[0_0_10px_rgba(0,123,255,0.5)]"></div>}
@@ -261,6 +264,9 @@ const AdminDashboard: React.FC = () => {
                     </div>
                 </div>
             )}
+
+            {/* Tab Content: FINANZAS */}
+            {activeTab === 'finanzas' && <FinancePanel />}
         </div>
     );
 };
@@ -544,9 +550,11 @@ const Layout: React.FC = () => {
 const App: React.FC = () => {
   return (
     <AppProvider>
-        <HashRouter>
-            <Layout />
-        </HashRouter>
+        <FinanceProvider>
+            <HashRouter>
+                <Layout />
+            </HashRouter>
+        </FinanceProvider>
     </AppProvider>
   );
 };
