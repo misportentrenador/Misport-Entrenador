@@ -11,7 +11,27 @@ const formatEUR = (n: number) =>
 
 const inputCls =
   'w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all text-sm';
+// Amber = valor económico fijo (tarifa del Modelo, o un override manual que lo sustituye)
+const fixedInputCls =
+  'w-full p-2.5 bg-amber-950/40 border border-amber-700/50 rounded-lg text-amber-50 placeholder-amber-700/60 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all text-sm';
+// Azul = dato variable de la sesión (cambia cada vez que se registra)
+const variableInputCls =
+  'w-full p-2.5 bg-blue-950/30 border border-blue-800/50 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all text-sm';
 const labelCls = 'block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5';
+
+// Verde si el resultado es positivo (o cero), rojo si es negativo
+const resultColor = (value: number) => (value < 0 ? 'text-red-400' : 'text-green-400');
+
+const ColorLegend: React.FC<{ items: { swatch: string; label: string }[] }> = ({ items }) => (
+  <div className="flex flex-wrap gap-4 text-xs text-gray-400">
+    {items.map(it => (
+      <span key={it.label} className="flex items-center gap-2">
+        <span className={`inline-block w-3 h-3 rounded-sm ${it.swatch}`}></span>
+        {it.label}
+      </span>
+    ))}
+  </div>
+);
 
 type Agg = { key: string; billingBase: number; netProfit: number; trainerTotal: number; centerTotal: number };
 
@@ -65,17 +85,17 @@ const ParametrosTab: React.FC = () => {
       </div>
       <div>
         <label className={labelCls}>Precio (€)</label>
-        <input type="number" step="0.5" min="0" className={inputCls} value={rate.price}
+        <input type="number" step="0.5" min="0" className={fixedInputCls} value={rate.price}
           onChange={e => onChange('price', Number(e.target.value))} />
       </div>
       <div>
         <label className={labelCls}>Pago entrenador (€)</label>
-        <input type="number" step="0.5" min="0" className={inputCls} value={rate.trainerPay}
+        <input type="number" step="0.5" min="0" className={fixedInputCls} value={rate.trainerPay}
           onChange={e => onChange('trainerPay', Number(e.target.value))} />
       </div>
       <div>
         <label className={labelCls}>Pago centro (€)</label>
-        <input type="number" step="0.5" min="0" className={inputCls} value={rate.centerPay}
+        <input type="number" step="0.5" min="0" className={fixedInputCls} value={rate.centerPay}
           onChange={e => onChange('centerPay', Number(e.target.value))} />
       </div>
     </div>
@@ -83,15 +103,17 @@ const ParametrosTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      <ColorLegend items={[{ swatch: 'bg-amber-600', label: 'Parámetro fijo (Modelo económico)' }]} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelCls}>IGIC (%)</label>
-          <input type="number" step="0.5" min="0" className={inputCls} value={Math.round(draft.igic * 1000) / 10}
+          <input type="number" step="0.5" min="0" className={fixedInputCls} value={Math.round(draft.igic * 1000) / 10}
             onChange={e => setDraft(d => ({ ...d, igic: Number(e.target.value) / 100 }))} />
         </div>
         <div>
           <label className={labelCls}>Impuesto sobre beneficio (%)</label>
-          <input type="number" step="1" min="0" className={inputCls} value={Math.round(draft.profitTax * 1000) / 10}
+          <input type="number" step="1" min="0" className={fixedInputCls} value={Math.round(draft.profitTax * 1000) / 10}
             onChange={e => setDraft(d => ({ ...d, profitTax: Number(e.target.value) / 100 }))} />
         </div>
       </div>
@@ -173,27 +195,33 @@ const RegistroTab: React.FC = () => {
   return (
     <div className="space-y-8">
       <form onSubmit={handleSubmit} className="p-5 bg-gray-900/40 rounded-xl border border-gray-800 space-y-4">
-        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Nueva sesión</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Nueva sesión</h3>
+          <ColorLegend items={[
+            { swatch: 'bg-blue-600', label: 'Dato variable (cambia cada sesión)' },
+            { swatch: 'bg-amber-600', label: 'Valor económico fijo / override' },
+          ]} />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className={labelCls}>Fecha</label>
-            <input type="date" className={inputCls} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
+            <input type="date" className={variableInputCls} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
           </div>
           <div>
             <label className={labelCls}>Entrenador</label>
-            <select className={inputCls} value={form.trainerName} onChange={e => setForm(f => ({ ...f, trainerName: e.target.value }))}>
+            <select className={variableInputCls} value={form.trainerName} onChange={e => setForm(f => ({ ...f, trainerName: e.target.value }))}>
               {trainerNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
           <div>
             <label className={labelCls}>Centro</label>
-            <select className={inputCls} value={form.centerName} onChange={e => setForm(f => ({ ...f, centerName: e.target.value }))}>
+            <select className={variableInputCls} value={form.centerName} onChange={e => setForm(f => ({ ...f, centerName: e.target.value }))}>
               {centerNames.map(n => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
           <div>
             <label className={labelCls}>Servicio</label>
-            <select className={inputCls} value={form.service} onChange={e => setForm(f => ({ ...f, service: e.target.value as FinanceServiceName }))}>
+            <select className={variableInputCls} value={form.service} onChange={e => setForm(f => ({ ...f, service: e.target.value as FinanceServiceName }))}>
               {FINANCE_SERVICES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
@@ -201,7 +229,7 @@ const RegistroTab: React.FC = () => {
           {form.service === 'Entrenamiento grupal' && (
             <div>
               <label className={labelCls}>Días/semana</label>
-              <select className={inputCls} value={form.groupDays} onChange={e => setForm(f => ({ ...f, groupDays: e.target.value as '1' | '2' | '3' }))}>
+              <select className={variableInputCls} value={form.groupDays} onChange={e => setForm(f => ({ ...f, groupDays: e.target.value as '1' | '2' | '3' }))}>
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -211,7 +239,7 @@ const RegistroTab: React.FC = () => {
 
           <div>
             <label className={labelCls}>Cantidad (sesiones)</label>
-            <input type="number" min="1" step="1" className={inputCls} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} required />
+            <input type="number" min="1" step="1" className={variableInputCls} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} required />
           </div>
         </div>
 
@@ -220,22 +248,22 @@ const RegistroTab: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
             <div>
               <label className={labelCls}>Precio manual unit. (€)</label>
-              <input type="number" step="0.5" className={inputCls} placeholder="Usar precio fijo" value={form.manualPrice} onChange={e => setForm(f => ({ ...f, manualPrice: e.target.value }))} />
+              <input type="number" step="0.5" className={fixedInputCls} placeholder="Usar precio fijo" value={form.manualPrice} onChange={e => setForm(f => ({ ...f, manualPrice: e.target.value }))} />
             </div>
             <div>
               <label className={labelCls}>Pago entrenador manual (€)</label>
-              <input type="number" step="0.5" className={inputCls} placeholder="Usar pago fijo" value={form.manualTrainerPay} onChange={e => setForm(f => ({ ...f, manualTrainerPay: e.target.value }))} />
+              <input type="number" step="0.5" className={fixedInputCls} placeholder="Usar pago fijo" value={form.manualTrainerPay} onChange={e => setForm(f => ({ ...f, manualTrainerPay: e.target.value }))} />
             </div>
             <div>
               <label className={labelCls}>Pago centro manual (€)</label>
-              <input type="number" step="0.5" className={inputCls} placeholder="Usar pago fijo" value={form.manualCenterPay} onChange={e => setForm(f => ({ ...f, manualCenterPay: e.target.value }))} />
+              <input type="number" step="0.5" className={fixedInputCls} placeholder="Usar pago fijo" value={form.manualCenterPay} onChange={e => setForm(f => ({ ...f, manualCenterPay: e.target.value }))} />
             </div>
           </div>
         </details>
 
         <div>
           <label className={labelCls}>Notas</label>
-          <input type="text" className={inputCls} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opcional" />
+          <input type="text" className={variableInputCls} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opcional" />
         </div>
 
         <button type="submit" className="flex items-center gap-2 bg-misportOrange hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg">
@@ -276,7 +304,7 @@ const RegistroTab: React.FC = () => {
                     <td className="px-4 py-3 text-right text-white">{formatEUR(t.billingBase)}</td>
                     <td className="px-4 py-3 text-right">{formatEUR(t.trainerTotal)}</td>
                     <td className="px-4 py-3 text-right">{formatEUR(t.centerTotal)}</td>
-                    <td className="px-4 py-3 text-right font-bold text-green-400">{formatEUR(t.netProfit)}</td>
+                    <td className={`px-4 py-3 text-right font-bold ${resultColor(t.netProfit)}`}>{formatEUR(t.netProfit)}</td>
                     <td className="px-4 py-3 text-right">
                       <button onClick={() => deleteEntry(entry.id)} title="Eliminar" className="text-gray-500 hover:text-red-400 transition-colors">
                         <Trash2 size={16} />
@@ -326,10 +354,10 @@ const ResumenTab: React.FC = () => {
     { label: 'Facturación base total', value: formatEUR(kpis.billingBase) },
     { label: 'Pago total entrenadores', value: formatEUR(kpis.trainerTotal) },
     { label: 'Pago total centros', value: formatEUR(kpis.centerTotal) },
-    { label: 'Margen empresa antes IS', value: formatEUR(kpis.margin) },
+    { label: 'Margen empresa antes IS', value: formatEUR(kpis.margin), signed: kpis.margin },
     { label: 'IGIC a abonar', value: formatEUR(kpis.igicAmount) },
     { label: 'Impuesto beneficio', value: formatEUR(kpis.profitTaxAmount) },
-    { label: 'Beneficio neto empresa', value: formatEUR(kpis.netProfit), highlight: true },
+    { label: 'Beneficio neto empresa', value: formatEUR(kpis.netProfit), signed: kpis.netProfit, final: true },
     { label: 'Cobro total cliente c/IGIC', value: formatEUR(kpis.totalCharged) },
     { label: 'Sesiones / unidades', value: String(kpis.sessions) },
   ];
@@ -353,7 +381,7 @@ const ResumenTab: React.FC = () => {
               <tr key={row.key} className="border-b border-gray-800 last:border-0">
                 <td className="px-4 py-2.5 text-white">{row.key}</td>
                 <td className="px-4 py-2.5 text-right">{formatEUR(row.billingBase)}</td>
-                <td className="px-4 py-2.5 text-right text-green-400 font-medium">{formatEUR(row.netProfit)}</td>
+                <td className={`px-4 py-2.5 text-right font-medium ${resultColor(row.netProfit)}`}>{formatEUR(row.netProfit)}</td>
               </tr>
             ))}
             {data.length === 0 && (
@@ -367,13 +395,23 @@ const ResumenTab: React.FC = () => {
 
   return (
     <div className="space-y-8">
+      <ColorLegend items={[
+        { swatch: 'bg-green-500', label: 'Resultado positivo' },
+        { swatch: 'bg-red-500', label: 'Resultado negativo' },
+      ]} />
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {kpiCards.map(k => (
-          <div key={k.label} className={`p-5 rounded-xl border ${k.highlight ? 'bg-green-900/10 border-green-900/40' : 'bg-misportDark border-gray-800'}`}>
-            <p className="text-gray-500 text-xs uppercase tracking-wider font-bold">{k.label}</p>
-            <p className={`text-2xl font-bold mt-2 ${k.highlight ? 'text-green-400' : 'text-white'}`}>{k.value}</p>
-          </div>
-        ))}
+        {kpiCards.map(k => {
+          const isPositive = (k.signed ?? 0) >= 0;
+          const finalBg = k.final ? (isPositive ? 'bg-green-900/25 border-green-600/60' : 'bg-red-900/25 border-red-600/60') : 'bg-misportDark border-gray-800';
+          const valueColor = k.signed !== undefined ? resultColor(k.signed) : 'text-white';
+          return (
+            <div key={k.label} className={`p-5 rounded-xl border ${finalBg} ${k.final ? 'sm:col-span-2 lg:col-span-3' : ''}`}>
+              <p className="text-gray-500 text-xs uppercase tracking-wider font-bold">{k.label}</p>
+              <p className={`font-bold mt-2 ${valueColor} ${k.final ? 'text-4xl' : 'text-2xl'}`}>{k.value}</p>
+            </div>
+          );
+        })}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
