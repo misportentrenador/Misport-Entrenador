@@ -10,6 +10,7 @@ interface AppContextType {
   trainers: Trainer[];
   reservations: Reservation[];
   scheduleRules: ScheduleRule[];
+  clients: User[];
   addReservation: (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail'>) => Promise<void>;
   cancelReservation: (id: string) => void;
   getOccupancy: (centerId: string, trainingTypeId: string, trainerId: string | null, date: string, time: string) => number;
@@ -36,6 +37,21 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   
   // Dynamic data
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [clients, setClients] = useState<User[]>([]);
+
+  // Reads the registered clients from the "DB" (passwords stripped) so the
+  // Admin > Clientes page always reflects who has registered.
+  const loadClients = () => {
+    const storedUsersString = localStorage.getItem('misport_db_users');
+    if (!storedUsersString) return;
+    try {
+        const users: (User & { password: string })[] = JSON.parse(storedUsersString);
+        setClients(users.map(({ password, ...safeUser }) => safeUser));
+    } catch (e) {
+        console.error("Failed to load clients, initializing empty.");
+        setClients([]);
+    }
+  };
 
   // Initialize Session and Data
   useEffect(() => {
@@ -59,6 +75,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             setReservations([]);
         }
     }
+
+    // 3. Load registered clients
+    loadClients();
   }, []);
 
   // Persist reservations whenever they change
@@ -126,6 +145,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     // Save to "DB"
     users.push(newUser);
     localStorage.setItem('misport_db_users', JSON.stringify(users));
+    loadClients();
 
     // Auto Login
     const { password: _, ...safeUser } = newUser;
@@ -209,6 +229,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       trainers,
       reservations,
       scheduleRules,
+      clients,
       addReservation,
       cancelReservation,
       getOccupancy,
