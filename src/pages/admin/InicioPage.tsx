@@ -5,8 +5,7 @@ import { useApp } from '../../context/AppContext';
 import { useFinance } from '../../context/FinanceContext';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
-
-const formatEUR = (n: number) => n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
+import { formatEURCompact } from '../../shared/lib/format';
 
 export const InicioPage: React.FC = () => {
   const { reservations, centers, trainers } = useApp();
@@ -30,12 +29,12 @@ export const InicioPage: React.FC = () => {
         <StatCard label="Reservas totales" value={reservations.length} icon={Calendar} tone="blue" />
         <StatCard label="Centros activos" value={centers.filter(c => c.isActive).length} icon={MapPin} tone="orange" />
         <StatCard label="Entrenadores" value={trainers.length} icon={Users} tone="green" />
-        <StatCard label="Facturación base" value={formatEUR(finance.billingBase)} icon={Euro} tone="purple" />
+        <StatCard label="Facturación base" value={formatEURCompact(finance.billingBase)} icon={Euro} tone="purple" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
-          <StatCard label="Beneficio neto empresa" value={formatEUR(finance.netProfit)} icon={TrendingUp} signed={finance.netProfit} />
+          <StatCard label="Beneficio neto empresa" value={formatEURCompact(finance.netProfit)} icon={TrendingUp} signed={finance.netProfit} />
         </div>
 
         <div className="lg:col-span-2 bg-misportDark rounded-xl shadow-lg border border-gray-800 overflow-hidden">

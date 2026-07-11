@@ -3,30 +3,9 @@ import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Badge } from '../../components/ui/Badge';
+import { toISODate, getMonday, addDays } from '../../shared/lib/date';
 
 const DAY_LABELS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
-const toISODate = (d: Date) => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const getMonday = (d: Date) => {
-  const date = new Date(d);
-  const day = date.getDay(); // 0=Sun
-  const diff = day === 0 ? -6 : 1 - day;
-  date.setDate(date.getDate() + diff);
-  date.setHours(0, 0, 0, 0);
-  return date;
-};
-
-const addDays = (d: Date, n: number) => {
-  const date = new Date(d);
-  date.setDate(date.getDate() + n);
-  return date;
-};
 
 export const AgendaPage: React.FC = () => {
   const { reservations, centers, trainers } = useApp();

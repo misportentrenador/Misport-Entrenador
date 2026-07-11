@@ -5,9 +5,7 @@ import { useApp } from '../context/AppContext';
 import { useFinance } from '../context/FinanceContext';
 import { FINANCE_SERVICES, FINANCE_ONLINE_CENTER, DEFAULT_FINANCE_PARAMS } from '../constants';
 import { FinanceParams, FinanceServiceName, ServiceRate, FinanceEntry, FinanceEntryTotals } from '../types';
-
-const formatEUR = (n: number) =>
-  n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+import { formatEUR } from '../shared/lib/format';
 
 const inputCls =
   'w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all text-sm';

@@ -1,19 +1,17 @@
 
 import React, { useState } from 'react';
-import { HashRouter, Routes, Route, Navigate, Link, Outlet, useLocation } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { BookingWizard } from './components/BookingWizard';
-import { Calendar, LogOut, Menu, X, Clock, XCircle, AlertCircle, Lock } from 'lucide-react';
+import { Calendar, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { AdminShell } from './layouts/AdminShell';
-import { InicioPage } from './pages/admin/InicioPage';
-import { ClientesPage } from './pages/admin/ClientesPage';
-import { AgendaPage } from './pages/admin/AgendaPage';
-import { ReservasPage } from './pages/admin/ReservasPage';
-import { CentrosPage } from './pages/admin/CentrosPage';
-import { EntrenadoresPage } from './pages/admin/EntrenadoresPage';
-import { FinanzasPage } from './pages/admin/FinanzasPage';
-import { ProximamentePage } from './pages/admin/ProximamentePage';
+import { ClientChrome } from './layouts/ClientChrome';
+import { ADMIN_ROUTES } from './app/routes';
+import { ErrorBoundary } from './core/errors/ErrorBoundary';
+import { NotificationProvider } from './core/notifications/NotificationContext';
+import { ToastViewport } from './core/notifications/ToastViewport';
+import { can } from './core/permissions/permissions';
 
 // --- ROUTE GUARDS ---
 
@@ -29,12 +27,12 @@ const RequireAuth = ({ children }: { children?: React.ReactNode }) => {
 
 const RequireAdmin = ({ children }: { children?: React.ReactNode }) => {
     const { user } = useApp();
-    
+
     if (!user) {
         return <Navigate to="/login" replace />;
     }
 
-    if (user.role !== 'ADMIN') {
+    if (!can(user.role, 'admin:access')) {
         // Silent redirect to home if a client tries to access admin
         return <Navigate to="/" replace />;
     }
@@ -308,77 +306,6 @@ const RegisterScreen: React.FC = () => {
 };
 
 
-// --- CLIENT CHROME (navbar + content for client-facing routes) ---
-const ClientChrome: React.FC = () => {
-    const { user, logout, isAdmin } = useApp();
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-    return (
-        <div className="min-h-screen bg-misportBlack flex flex-col font-sans text-gray-200">
-            {/* Navbar (Only visible if logged in) */}
-            {user && (
-                <nav className="bg-misportBlack border-b border-gray-800 sticky top-0 z-50 shadow-md">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between h-20">
-                            <div className="flex items-center">
-                                <Link to="/" className="flex items-center gap-3 group">
-                                    <div className="h-10 w-auto">
-                                        <img src="/misport-logo.png" alt="MISPORT" className="h-full w-auto object-contain" />
-                                    </div>
-                                    <span className="text-white font-bold text-xl tracking-tight hidden sm:block group-hover:text-misportBlue transition-colors">
-                                        SOLUTION TRAINING
-                                    </span>
-                                </Link>
-                            </div>
-                            
-                            {/* Desktop Menu */}
-                            <div className="hidden md:flex items-center space-x-8">
-                                <Link to="/" className="text-gray-300 hover:text-misportBlue font-medium transition-colors text-sm uppercase tracking-wide">Inicio</Link>
-                                {!isAdmin && <Link to="/book" className="text-gray-300 hover:text-misportBlue font-medium transition-colors text-sm uppercase tracking-wide">Reservar</Link>}
-                                {isAdmin && <Link to="/admin" className="text-misportBlue font-bold transition-colors text-sm uppercase tracking-wide flex items-center gap-1"><Lock size={14}/> Administración</Link>}
-                                <div className="flex items-center gap-4 ml-6 pl-6 border-l border-gray-800">
-                                    <div className="text-right">
-                                        <span className="block text-sm font-bold text-white leading-tight">{user.name}</span>
-                                        <span className="block text-xs text-gray-500 uppercase tracking-wider">{isAdmin ? 'Administrador' : 'Cliente'}</span>
-                                    </div>
-                                    <button onClick={logout} title="Salir" className="text-gray-400 hover:text-red-500 transition-colors bg-gray-900 p-2.5 rounded-full border border-gray-800 hover:border-red-900">
-                                        <LogOut size={18} />
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Mobile Button */}
-                            <div className="md:hidden flex items-center">
-                                <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="text-gray-300 hover:text-white p-2">
-                                    {mobileMenuOpen ? <X /> : <Menu />}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Mobile Menu */}
-                    {mobileMenuOpen && (
-                        <div className="md:hidden bg-misportDark border-b border-gray-800 p-4 space-y-4 shadow-xl absolute w-full z-50">
-                            <div className="pb-4 border-b border-gray-800 mb-4">
-                                <p className="font-bold text-white">{user.name}</p>
-                                <p className="text-xs text-gray-500">{user.email}</p>
-                            </div>
-                            <Link to="/" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white font-medium py-2">INICIO</Link>
-                            {!isAdmin && <Link to="/book" onClick={() => setMobileMenuOpen(false)} className="block text-gray-300 hover:text-white font-medium py-2">RESERVAR</Link>}
-                            {isAdmin && <Link to="/admin" onClick={() => setMobileMenuOpen(false)} className="block text-misportBlue font-bold py-2">ADMINISTRACIÓN</Link>}
-                            <button onClick={logout} className="text-red-400 font-medium w-full text-left py-2 flex items-center gap-2 mt-4"><LogOut size={16}/> Cerrar Sesión</button>
-                        </div>
-                    )}
-                </nav>
-            )}
-
-            <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
-                <Outlet />
-            </main>
-        </div>
-    );
-};
-
 // --- ROUTES ---
 const Layout: React.FC = () => {
     return (
@@ -407,14 +334,9 @@ const Layout: React.FC = () => {
                 </RequireAdmin>
             }>
                 <Route index element={<Navigate to="inicio" replace />} />
-                <Route path="inicio" element={<InicioPage />} />
-                <Route path="clientes" element={<ClientesPage />} />
-                <Route path="agenda" element={<AgendaPage />} />
-                <Route path="reservas" element={<ReservasPage />} />
-                <Route path="centros" element={<CentrosPage />} />
-                <Route path="entrenadores" element={<EntrenadoresPage />} />
-                <Route path="finanzas" element={<FinanzasPage />} />
-                <Route path="proximamente" element={<ProximamentePage />} />
+                {ADMIN_ROUTES.map(route => (
+                    <Route key={route.path} path={route.path} element={route.element} />
+                ))}
             </Route>
 
             {/* Catch all */}
@@ -425,13 +347,18 @@ const Layout: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-        <FinanceProvider>
-            <HashRouter>
-                <Layout />
-            </HashRouter>
-        </FinanceProvider>
-    </AppProvider>
+    <ErrorBoundary>
+        <NotificationProvider>
+            <AppProvider>
+                <FinanceProvider>
+                    <HashRouter>
+                        <Layout />
+                    </HashRouter>
+                    <ToastViewport />
+                </FinanceProvider>
+            </AppProvider>
+        </NotificationProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -2,9 +2,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, ServiceRate } from '../types';
 import { DEFAULT_FINANCE_PARAMS } from '../constants';
+import { STORAGE_KEYS } from '../config/storageKeys';
 
-const PARAMS_KEY = 'misport_finance_params';
-const ENTRIES_KEY = 'misport_finance_entries';
+const PARAMS_KEY = STORAGE_KEYS.financeParams;
+const ENTRIES_KEY = STORAGE_KEYS.financeEntries;
 
 function getBaseRate(params: FinanceParams, service: FinanceServiceName, groupDays?: number): ServiceRate | null {
   if (service === 'Electroestimulación') return params.electro;

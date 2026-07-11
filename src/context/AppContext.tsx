@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Center, Trainer, TrainingType, User, Reservation, ScheduleRule } from '../types';
 import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
+import { STORAGE_KEYS } from '../config/storageKeys';
 
 interface AppContextType {
   user: User | null;
@@ -42,7 +43,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Reads the registered clients from the "DB" (passwords stripped) so the
   // Admin > Clientes page always reflects who has registered.
   const loadClients = () => {
-    const storedUsersString = localStorage.getItem('misport_db_users');
+    const storedUsersString = localStorage.getItem(STORAGE_KEYS.registeredUsers);
     if (!storedUsersString) return;
     try {
         const users: (User & { password: string })[] = JSON.parse(storedUsersString);
@@ -56,17 +57,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Initialize Session and Data
   useEffect(() => {
     // 1. Load active session
-    const sessionUser = localStorage.getItem('misport_session');
+    const sessionUser = localStorage.getItem(STORAGE_KEYS.session);
     if (sessionUser) {
         try {
             setUser(JSON.parse(sessionUser));
         } catch (e) {
-            localStorage.removeItem('misport_session');
+            localStorage.removeItem(STORAGE_KEYS.session);
         }
     }
 
     // 2. Load reservations from localStorage (misport_reservas)
-    const storedReservations = localStorage.getItem('misport_reservations');
+    const storedReservations = localStorage.getItem(STORAGE_KEYS.reservations);
     if (storedReservations) {
         try {
             setReservations(JSON.parse(storedReservations));
@@ -83,7 +84,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Persist reservations whenever they change
   useEffect(() => {
     if (reservations.length > 0) {
-        localStorage.setItem('misport_reservations', JSON.stringify(reservations));
+        localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(reservations));
     }
   }, [reservations]);
 
@@ -95,12 +96,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     // 1. Check Hardcoded Admin Credentials
     if (normalizedEmail === MOCK_ADMIN_USER.email.toLowerCase() && password === 'Misport123!') {
         setUser(MOCK_ADMIN_USER);
-        localStorage.setItem('misport_session', JSON.stringify(MOCK_ADMIN_USER));
+        localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(MOCK_ADMIN_USER));
         return { success: true };
-    } 
+    }
 
     // 2. Check LocalStorage Users (Clients)
-    const storedUsersString = localStorage.getItem('misport_db_users');
+    const storedUsersString = localStorage.getItem(STORAGE_KEYS.registeredUsers);
     if (storedUsersString) {
         const users: (User & { password: string })[] = JSON.parse(storedUsersString);
         const foundUser = users.find(u => u.email.toLowerCase() === normalizedEmail);
@@ -108,9 +109,9 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         if (foundUser) {
             if (foundUser.password === password) {
                 // Remove password before setting state
-                const { password: _, ...safeUser } = foundUser; 
+                const { password: _, ...safeUser } = foundUser;
                 setUser(safeUser);
-                localStorage.setItem('misport_session', JSON.stringify(safeUser));
+                localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(safeUser));
                 return { success: true };
             } else {
                 return { success: false, message: 'Contraseña incorrecta.' };
@@ -125,7 +126,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check if user already exists in DB
-    const storedUsersString = localStorage.getItem('misport_db_users');
+    const storedUsersString = localStorage.getItem(STORAGE_KEYS.registeredUsers);
     let users: (User & { password: string })[] = storedUsersString ? JSON.parse(storedUsersString) : [];
 
     if (users.some(u => u.email.toLowerCase() === normalizedEmail) || normalizedEmail === MOCK_ADMIN_USER.email.toLowerCase()) {
@@ -144,20 +145,20 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     // Save to "DB"
     users.push(newUser);
-    localStorage.setItem('misport_db_users', JSON.stringify(users));
+    localStorage.setItem(STORAGE_KEYS.registeredUsers, JSON.stringify(users));
     loadClients();
 
     // Auto Login
     const { password: _, ...safeUser } = newUser;
     setUser(safeUser);
-    localStorage.setItem('misport_session', JSON.stringify(safeUser));
+    localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(safeUser));
 
     return { success: true };
   };
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('misport_session');
+    localStorage.removeItem(STORAGE_KEYS.session);
   };
 
   // --- RESERVATION ACTIONS ---
@@ -183,15 +184,15 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setReservations(prev => {
         const updated = [...prev, newReservation];
         // Explicitly save to localStorage here as well to ensure sync
-        localStorage.setItem('misport_reservations', JSON.stringify(updated));
+        localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(updated));
         return updated;
     });
   };
 
   const cancelReservation = (id: string) => {
     setReservations(prev => {
-        const updated = prev.map(r => r.id === id ? { ...r, status: 'CANCELLED' } : r);
-        localStorage.setItem('misport_reservations', JSON.stringify(updated));
+        const updated = prev.map(r => r.id === id ? { ...r, status: 'CANCELLED' as const } : r);
+        localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(updated));
         return updated;
     });
   };

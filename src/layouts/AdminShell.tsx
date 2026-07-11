@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
-import { Home, Users, CalendarDays, ClipboardList, MapPin, UserCog, Euro, Sparkles, Link2, Calendar, Receipt, Menu } from 'lucide-react';
+import { Sparkles, Link2, Calendar, Receipt, Menu } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Sidebar, SidebarNavItem, SidebarComingSoonItem } from '../components/ui/Sidebar';
+import { ADMIN_ROUTES } from '../app/routes';
 
-const NAV_ITEMS: SidebarNavItem[] = [
-  { to: '/admin/inicio', label: 'Inicio', icon: Home },
-  { to: '/admin/clientes', label: 'Clientes', icon: Users },
-  { to: '/admin/agenda', label: 'Agenda', icon: CalendarDays },
-  { to: '/admin/reservas', label: 'Reservas', icon: ClipboardList },
-  { to: '/admin/centros', label: 'Centros', icon: MapPin },
-  { to: '/admin/entrenadores', label: 'Entrenadores', icon: UserCog },
-  { to: '/admin/finanzas', label: 'Finanzas', icon: Euro },
-];
+const NAV_ITEMS: SidebarNavItem[] = ADMIN_ROUTES.filter(route => route.showInNav).map(route => ({
+  to: `/admin/${route.path}`,
+  label: route.label,
+  icon: route.icon,
+}));
 
 const COMING_SOON: SidebarComingSoonItem[] = [
   { label: 'Asistente IA', icon: Sparkles },
