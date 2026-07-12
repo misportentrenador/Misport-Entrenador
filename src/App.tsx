@@ -90,11 +90,16 @@ const ClientDashboard: React.FC = () => {
                         myReservations.map(r => {
                             const center = centers.find(c => c.id === r.centerId);
                             const isConfirmed = r.status === 'CONFIRMED';
-                            
+                            const isCompleted = r.status === 'COMPLETED';
+                            const cardTone = isConfirmed ? 'border-gray-800' : isCompleted ? 'border-blue-900/30 bg-blue-950/10' : 'border-red-900/30 bg-red-950/10 opacity-75';
+                            const dateTone = isConfirmed || isCompleted ? 'bg-blue-900/20 text-misportBlue border border-blue-900/50' : 'bg-gray-800 text-gray-500';
+                            const statusTone = isConfirmed ? 'bg-green-900/20 text-green-400 border-green-900/50' : isCompleted ? 'bg-blue-900/20 text-misportBlue border-blue-900/50' : 'bg-red-900/20 text-red-400 border-red-900/50';
+                            const statusLabel = isConfirmed ? 'CONFIRMADA' : isCompleted ? 'COMPLETADA' : 'CANCELADA';
+
                             return (
-                                <div key={r.id} className={`bg-misportDark p-6 rounded-xl shadow-lg border flex flex-col sm:flex-row justify-between items-center hover:border-misportBlue/30 transition-all gap-4 ${isConfirmed ? 'border-gray-800' : 'border-red-900/30 bg-red-950/10 opacity-75'}`}>
+                                <div key={r.id} className={`bg-misportDark p-6 rounded-xl shadow-lg border flex flex-col sm:flex-row justify-between items-center hover:border-misportBlue/30 transition-all gap-4 ${cardTone}`}>
                                     <div className="flex gap-5 items-center w-full sm:w-auto">
-                                        <div className={`p-4 rounded-lg font-bold text-center min-w-[80px] ${isConfirmed ? 'bg-blue-900/20 text-misportBlue border border-blue-900/50' : 'bg-gray-800 text-gray-500'}`}>
+                                        <div className={`p-4 rounded-lg font-bold text-center min-w-[80px] ${dateTone}`}>
                                             <div className="text-xs uppercase tracking-wider">{new Date(r.date).toLocaleDateString('es-ES', { month: 'short' }).replace('.', '')}</div>
                                             <div className="text-3xl leading-none mt-1">{new Date(r.date).getDate()}</div>
                                         </div>
@@ -103,12 +108,12 @@ const ClientDashboard: React.FC = () => {
                                             <p className="text-gray-400 font-medium flex items-center gap-1.5 text-sm mt-1">
                                                 <Clock size={14} className="text-misportOrange" /> {r.startTime} - {r.endTime}
                                             </p>
-                                            <span className={`inline-flex items-center gap-1 mt-3 text-xs px-2.5 py-0.5 rounded border ${isConfirmed ? 'bg-green-900/20 text-green-400 border-green-900/50' : 'bg-red-900/20 text-red-400 border-red-900/50'}`}>
-                                                {isConfirmed ? 'CONFIRMADA' : 'CANCELADA'}
+                                            <span className={`inline-flex items-center gap-1 mt-3 text-xs px-2.5 py-0.5 rounded border ${statusTone}`}>
+                                                {statusLabel}
                                             </span>
                                         </div>
                                     </div>
-                                    
+
                                     {isConfirmed && (
                                         <button 
                                             onClick={() => handleCancelClick(r.id)}

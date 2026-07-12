@@ -20,7 +20,7 @@ export const AgendaPage: React.FC = () => {
     const map = new Map<string, typeof reservations>();
     days.forEach(d => map.set(toISODate(d), []));
     reservations
-      .filter(r => r.status === 'CONFIRMED')
+      .filter(r => r.status === 'CONFIRMED' || r.status === 'COMPLETED')
       .forEach(r => {
         if (map.has(r.date)) map.get(r.date)!.push(r);
       });
@@ -65,10 +65,14 @@ export const AgendaPage: React.FC = () => {
                 {list.map(r => {
                   const center = centers.find(c => c.id === r.centerId);
                   const trainer = trainers.find(t => t.id === r.trainerId);
+                  const isCompleted = r.status === 'COMPLETED';
                   return (
-                    <div key={r.id} className="p-2.5 rounded-lg bg-gray-900/60 border border-gray-800">
-                      <div className="flex items-center gap-1.5 text-xs text-misportOrange font-bold">
-                        <Clock size={12} /> {r.startTime} - {r.endTime}
+                    <div key={r.id} className={`p-2.5 rounded-lg border ${isCompleted ? 'bg-blue-900/10 border-blue-900/30' : 'bg-gray-900/60 border-gray-800'}`}>
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="flex items-center gap-1.5 text-xs text-misportOrange font-bold">
+                          <Clock size={12} /> {r.startTime} - {r.endTime}
+                        </span>
+                        {isCompleted && <Badge tone="info">Completada</Badge>}
                       </div>
                       <p className="text-white text-sm font-medium mt-1 truncate">{center?.name ?? '—'}</p>
                       <p className="text-xs text-gray-500 truncate">{trainer?.name ?? 'Sin entrenador'} · {r.userName}</p>

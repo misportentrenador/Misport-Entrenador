@@ -1,13 +1,56 @@
 import React, { useState } from 'react';
-import { Calendar, Filter, Plus } from 'lucide-react';
+import { Calendar, CheckCircle2, Filter, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { useFinance, financeServiceNameForCatalogServiceId } from '../../context/FinanceContext';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { Badge } from '../../components/ui/Badge';
+import { Badge, BadgeTone } from '../../components/ui/Badge';
+import { Reservation } from '../../types';
+
+const STATUS_LABEL: Record<Reservation['status'], string> = {
+  CONFIRMED: 'ACTIVA',
+  CANCELLED: 'CANCELADA',
+  COMPLETED: 'COMPLETADA',
+};
+const STATUS_TONE: Record<Reservation['status'], BadgeTone> = {
+  CONFIRMED: 'success',
+  CANCELLED: 'danger',
+  COMPLETED: 'info',
+};
 
 export const ReservasPage: React.FC = () => {
-  const { reservations, centers, trainers } = useApp();
+  const { reservations, centers, trainers, completeReservation } = useApp();
+  const { entries, addEntry } = useFinance();
   const [filterCenter, setFilterCenter] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
+  const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
+
+  // Sprint 7: al completar una reserva, se genera automáticamente su entrada
+  // en Finanzas (mismo centro/entrenador/servicio/fecha/tarifa del Catálogo).
+  // sourceReservationId evita crear una segunda entrada si se repite la acción.
+  const handleComplete = (r: Reservation) => {
+    if (r.status !== 'CONFIRMED' || completingIds.has(r.id)) return;
+    setCompletingIds(prev => new Set(prev).add(r.id));
+
+    completeReservation(r.id);
+
+    const alreadyRecorded = entries.some(e => e.sourceReservationId === r.id);
+    const financeService = financeServiceNameForCatalogServiceId(r.serviceId);
+    if (!alreadyRecorded && financeService) {
+      const center = centers.find(c => c.id === r.centerId);
+      const trainer = trainers.find(t => t.id === r.trainerId);
+      addEntry({
+        date: r.date,
+        trainerName: trainer?.name ?? 'Grupal (sin asignar)',
+        centerName: center?.name ?? '',
+        service: financeService,
+        // Decisión de negocio (Sprint 7): usar siempre la tarifa oficial de
+        // Grupo del Catálogo, sin inferir la frecuencia semanal real.
+        groupDays: financeService === 'Entrenamiento grupal' ? 1 : undefined,
+        quantity: 1,
+        sourceReservationId: r.id,
+      });
+    }
+  };
 
   const filteredReservations = reservations.filter(r => {
     const matchesCenter = filterCenter === 'all' || r.centerId === filterCenter;
@@ -66,6 +109,7 @@ export const ReservasPage: React.FC = () => {
                 <th className="px-6 py-4">Centro</th>
                 <th className="px-6 py-4">Entrenador</th>
                 <th className="px-6 py-4">Estado</th>
+                <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody>
@@ -84,16 +128,25 @@ export const ReservasPage: React.FC = () => {
                     <td className="px-6 py-4">{center?.name}</td>
                     <td className="px-6 py-4">{trainer?.name || '-'}</td>
                     <td className="px-6 py-4">
-                      <Badge tone={r.status === 'CONFIRMED' ? 'success' : 'danger'}>
-                        {r.status === 'CONFIRMED' ? 'ACTIVA' : 'CANCELADA'}
-                      </Badge>
+                      <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      {r.status === 'CONFIRMED' && (
+                        <button
+                          onClick={() => handleComplete(r)}
+                          disabled={completingIds.has(r.id)}
+                          className="flex items-center gap-1.5 text-misportBlue hover:text-blue-400 text-xs font-bold transition-colors disabled:opacity-40 disabled:cursor-not-allowed ml-auto"
+                        >
+                          <CheckCircle2 size={14} /> Marcar completada
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
               })}
               {filteredReservations.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-gray-600">
+                  <td colSpan={6} className="px-6 py-12 text-center text-gray-600">
                     <Calendar className="mx-auto mb-2 opacity-20" size={32} />
                     No hay reservas que coincidan con los filtros.
                   </td>

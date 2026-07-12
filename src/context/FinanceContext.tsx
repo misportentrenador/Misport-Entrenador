@@ -36,6 +36,22 @@ export function findFinanceRate(rates: Rate[], service: FinanceServiceName, grou
     .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
 }
 
+/**
+ * Dirección inversa del puente (Sprint 7): dado el serviceId real de una
+ * Reserva del Catálogo, qué FinanceServiceName le corresponde al generar
+ * automáticamente su entrada económica al completarla.
+ */
+const CATALOG_ID_TO_SERVICE: Record<string, FinanceServiceName> = {
+  svc_electro: 'Electroestimulación',
+  svc_personal: 'Entrenamiento personal',
+  svc_online: 'Entrenamiento online',
+  svc_grupal: 'Entrenamiento grupal',
+};
+
+export function financeServiceNameForCatalogServiceId(serviceId: string): FinanceServiceName | undefined {
+  return CATALOG_ID_TO_SERVICE[serviceId];
+}
+
 export function computeEntryTotals(entry: FinanceEntry, params: FinanceParams, rates: Rate[]): FinanceEntryTotals {
   const base = findFinanceRate(rates, entry.service, entry.groupDays);
 

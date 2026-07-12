@@ -110,6 +110,8 @@ export interface FinanceEntry {
   manualCenterPay?: number;
   notes?: string;
   createdAt: number;
+  /** Reserva de origen si esta entrada se generó automáticamente al completar una sesión (Sprint 7). */
+  sourceReservationId?: string;
 }
 
 // Computed totals for a single FinanceEntry
