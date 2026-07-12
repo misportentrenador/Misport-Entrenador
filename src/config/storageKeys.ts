@@ -14,5 +14,8 @@ export const STORAGE_KEYS = {
   catalogServices: 'misport_catalog_services',
   catalogRates: 'misport_catalog_rates',
   catalogBonos: 'misport_catalog_bonos',
-  catalogRecursos: 'misport_catalog_recursos',
+  masterDataPersonas: 'misport_masterdata_personas',
+  masterDataOrganizaciones: 'misport_masterdata_organizaciones',
+  masterDataContactos: 'misport_masterdata_contactos',
+  masterDataRecursos: 'misport_masterdata_recursos',
 } as const;

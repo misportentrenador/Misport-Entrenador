@@ -4,6 +4,7 @@ import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-ro
 import { AppProvider, useApp } from './context/AppContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { CatalogProvider } from './modules/catalog/context/CatalogContext';
+import { MasterDataProvider } from './modules/masterdata/context/MasterDataContext';
 import { BookingWizard } from './components/BookingWizard';
 import { Calendar, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { AdminShell } from './layouts/AdminShell';
@@ -352,12 +353,14 @@ const App: React.FC = () => {
         <NotificationProvider>
             <AppProvider>
                 <CatalogProvider>
-                    <FinanceProvider>
-                        <HashRouter>
-                            <Layout />
-                        </HashRouter>
-                        <ToastViewport />
-                    </FinanceProvider>
+                    <MasterDataProvider>
+                        <FinanceProvider>
+                            <HashRouter>
+                                <Layout />
+                            </HashRouter>
+                            <ToastViewport />
+                        </FinanceProvider>
+                    </MasterDataProvider>
                 </CatalogProvider>
             </AppProvider>
         </NotificationProvider>

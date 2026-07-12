@@ -2,9 +2,10 @@ import { Entity, Timestamps } from '../../core/types';
 
 /**
  * Catálogo Maestro — single source of truth for Centros, Entrenadores,
- * Servicios, Tarifas, Bonos y Recursos. Base entities only: no redemption
- * logic for Bonos, no scheduling logic for Recursos — that is deliberately
- * out of scope for this module (see Sprint 2 design).
+ * Servicios, Tarifas y Bonos. Base entities only: no redemption logic for
+ * Bonos — that is deliberately out of scope for this module (see Sprint 2
+ * design). Recurso moved to modules/masterdata in Sprint 3 (part of the
+ * Master Data domain alongside Cliente and Empresa, not Catálogo).
  */
 
 export interface Center extends Entity, Timestamps {
@@ -57,12 +58,5 @@ export interface Bono extends Entity, Timestamps {
   sessionsIncluded: number;
   price: number;
   validityDays: number | null;
-  isActive: boolean;
-}
-
-export interface Recurso extends Entity, Timestamps {
-  name: string;
-  category: string;
-  centerId: string;
   isActive: boolean;
 }

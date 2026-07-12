@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Plus, Pencil, Box } from 'lucide-react';
-import { useCatalog } from '../context/CatalogContext';
+import { useMasterData } from '../context/MasterDataContext';
+import { useCatalog } from '../../catalog/context/CatalogContext';
 import { Table, TableColumn } from '../../../components/ui/Table';
 import { Modal } from '../../../components/ui/Modal';
 import { Input } from '../../../components/ui/Input';
@@ -14,8 +15,14 @@ import { Recurso } from '../types';
 
 const emptyForm = { name: '', category: '', centerId: '' };
 
+/**
+ * Recurso belongs to the Master Data domain but its centerId references
+ * Catálogo's Center — a legitimate cross-module read via the other
+ * module's public context (useCatalog), never its storage directly.
+ */
 export const RecursosTab: React.FC = () => {
-  const { recursos, centers } = useCatalog();
+  const { recursos } = useMasterData();
+  const { centers } = useCatalog();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -72,7 +79,7 @@ export const RecursosTab: React.FC = () => {
       {recursos.loading ? (
         <div className="p-12 flex justify-center"><Spinner /></div>
       ) : recursos.items.length === 0 ? (
-        <EmptyState icon={Box} message="Todavía no hay recursos en el catálogo." />
+        <EmptyState icon={Box} message="Todavía no hay recursos registrados." />
       ) : (
         <Card className="overflow-hidden">
           <Table columns={columns} rows={recursos.items} rowKey={r => r.id} />

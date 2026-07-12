@@ -1,4 +1,4 @@
-import { Center, Trainer, Service, Rate, Bono, Recurso } from '../types';
+import { Center, Trainer, Service, Rate, Bono } from '../types';
 
 /**
  * Seed data for the Catálogo Maestro, reconciled from today's two
@@ -48,6 +48,5 @@ export const RATE_SEED: Rate[] = [
   { id: 'rate_online', serviceId: 'svc_online', variant: null, price: 50, trainerPay: 30, centerPay: 0, effectiveFrom: BASELINE, createdAt: BASELINE, updatedAt: BASELINE },
 ];
 
-// No existing data to reconcile for these — left empty for the admin to fill in.
+// No existing data to reconcile — left empty for the admin to fill in.
 export const BONO_SEED: Bono[] = [];
-export const RECURSO_SEED: Recurso[] = [];

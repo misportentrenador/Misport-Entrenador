@@ -1,10 +1,10 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Entity, Timestamps } from '../../../core/types';
-import { Center, Trainer, Service, Rate, Bono, Recurso } from '../types';
-import { centersRepo, trainersRepo, servicesRepo, ratesRepo, bonosRepo, recursosRepo } from '../data/repositories';
-import { useCatalogEntity } from '../data/useCatalogEntity';
+import { Center, Trainer, Service, Rate, Bono } from '../types';
+import { centersRepo, trainersRepo, servicesRepo, ratesRepo, bonosRepo } from '../data/repositories';
+import { useEntityCollection } from '../../../shared/hooks/useEntityCollection';
 
-type EntityBinding<T extends Entity & Timestamps> = ReturnType<typeof useCatalogEntity<T>>;
+type EntityBinding<T extends Entity & Timestamps> = ReturnType<typeof useEntityCollection<T>>;
 
 interface CatalogContextType {
   centers: EntityBinding<Center>;
@@ -12,21 +12,19 @@ interface CatalogContextType {
   services: EntityBinding<Service>;
   rates: EntityBinding<Rate>;
   bonos: EntityBinding<Bono>;
-  recursos: EntityBinding<Recurso>;
 }
 
 const CatalogContext = createContext<CatalogContextType | undefined>(undefined);
 
 export const CatalogProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const centers = useCatalogEntity(centersRepo, 'ctr');
-  const trainers = useCatalogEntity(trainersRepo, 'trn');
-  const services = useCatalogEntity(servicesRepo, 'svc');
-  const rates = useCatalogEntity(ratesRepo, 'rate');
-  const bonos = useCatalogEntity(bonosRepo, 'bono');
-  const recursos = useCatalogEntity(recursosRepo, 'rec');
+  const centers = useEntityCollection(centersRepo, 'ctr');
+  const trainers = useEntityCollection(trainersRepo, 'trn');
+  const services = useEntityCollection(servicesRepo, 'svc');
+  const rates = useEntityCollection(ratesRepo, 'rate');
+  const bonos = useEntityCollection(bonosRepo, 'bono');
 
   return (
-    <CatalogContext.Provider value={{ centers, trainers, services, rates, bonos, recursos }}>
+    <CatalogContext.Provider value={{ centers, trainers, services, rates, bonos }}>
       {children}
     </CatalogContext.Provider>
   );

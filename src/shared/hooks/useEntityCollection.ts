@@ -1,21 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Entity, Timestamps } from '../../../core/types';
-import { Repository } from '../../../core/data/repository';
+import { Entity, Timestamps } from '../../core/types';
+import { Repository } from '../../core/data/repository';
 
 type Draft<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>;
 
 /**
- * Generic list+CRUD binding between a Repository<T> and a React component,
- * shared by all six Catálogo entities instead of writing near-identical
- * load/create/update logic six times.
+ * Generic list+CRUD binding between a Repository<T> and a React component.
+ * Shared across domains (Catálogo, Master Data, ...) instead of each one
+ * writing near-identical load/create/update logic per entity — this is
+ * exactly the "estructura, patrones, servicios, gestión de estados"
+ * every entity in a domain is expected to share.
  *
  * Deliberately does NOT seed here: seeding "if empty" inside a React effect
  * is a check-then-write race — React StrictMode's double-invoke in dev (and
  * any future double-mount) can run two reads before either write lands,
  * seeding twice. Seeding happens once, synchronously, at module load time
- * in data/repositories.ts instead, where it can't race.
+ * in each domain's data/repositories.ts instead, where it can't race.
  */
-export function useCatalogEntity<T extends Entity & Timestamps>(
+export function useEntityCollection<T extends Entity & Timestamps>(
   repo: Repository<T>,
   idPrefix: string
 ) {
