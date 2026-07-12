@@ -3,6 +3,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Center, Trainer, TrainingType, User, Reservation, ScheduleRule } from '../types';
 import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
+import { createEntityId } from '../core/data/entityId';
+import { personasRepo } from '../modules/masterdata/data/repositories';
 
 interface AppContextType {
   user: User | null;
@@ -17,7 +19,7 @@ interface AppContextType {
   getOccupancy: (centerId: string, trainingTypeId: string, trainerId: string | null, date: string, time: string) => number;
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
-  register: (name: string, email: string, password: string) => { success: boolean; message?: string };
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   logout: () => void;
 }
 
@@ -122,7 +124,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return { success: false, message: 'Usuario no encontrado.' };
   };
 
-  const register = (name: string, email: string, password: string): { success: boolean; message?: string } => {
+  const register = async (name: string, email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     const normalizedEmail = email.toLowerCase().trim();
 
     // Check if user already exists in DB
@@ -147,6 +149,26 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     users.push(newUser);
     localStorage.setItem(STORAGE_KEYS.registeredUsers, JSON.stringify(users));
     loadClients();
+
+    // Every registered client gets a linked Persona in Master Data (Sprint 4
+    // bridge). Best-effort: a failure here must not block account creation.
+    try {
+        const now = new Date().toISOString();
+        await personasRepo.create({
+            id: createEntityId('per'),
+            name,
+            email: normalizedEmail,
+            phone: '',
+            docId: '',
+            userId: newUser.id,
+            notes: '',
+            isActive: true,
+            createdAt: now,
+            updatedAt: now,
+        });
+    } catch (e) {
+        console.error('Failed to create linked Persona for new user', e);
+    }
 
     // Auto Login
     const { password: _, ...safeUser } = newUser;

@@ -226,7 +226,7 @@ const RegisterScreen: React.FC = () => {
         return <Navigate to="/" replace />;
     }
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
 
@@ -240,7 +240,7 @@ const RegisterScreen: React.FC = () => {
             return;
         }
 
-        const result = register(name, email, password);
+        const result = await register(name, email, password);
         if (!result.success) {
             setError(result.message || 'Error al registrarse');
         }

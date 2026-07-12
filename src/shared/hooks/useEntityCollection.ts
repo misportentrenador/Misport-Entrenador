@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Entity, Timestamps } from '../../core/types';
 import { Repository } from '../../core/data/repository';
+import { createEntityId } from '../../core/data/entityId';
 
 type Draft<T> = Omit<T, 'id' | 'createdAt' | 'updatedAt'>;
 
@@ -37,7 +38,7 @@ export function useEntityCollection<T extends Entity & Timestamps>(
     const now = new Date().toISOString();
     const newItem = {
       ...data,
-      id: `${idPrefix}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      id: createEntityId(idPrefix),
       createdAt: now,
       updatedAt: now,
     } as T;
