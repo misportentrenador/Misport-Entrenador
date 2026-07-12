@@ -351,18 +351,18 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
         <NotificationProvider>
-            <AppProvider>
-                <CatalogProvider>
-                    <MasterDataProvider>
+            <CatalogProvider>
+                <MasterDataProvider>
+                    <AppProvider>
                         <FinanceProvider>
                             <HashRouter>
                                 <Layout />
                             </HashRouter>
                             <ToastViewport />
                         </FinanceProvider>
-                    </MasterDataProvider>
-                </CatalogProvider>
-            </AppProvider>
+                    </AppProvider>
+                </MasterDataProvider>
+            </CatalogProvider>
         </NotificationProvider>
     </ErrorBoundary>
   );

@@ -1,22 +1,24 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Center, Trainer, TrainingType, User, Reservation, ScheduleRule } from '../types';
-import { MOCK_CENTERS, MOCK_TRAINING_TYPES, MOCK_TRAINERS, MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
+import { User, Reservation, ScheduleRule } from '../types';
+import { Center, Trainer, Service } from '../modules/catalog/types';
+import { MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
 import { createEntityId } from '../core/data/entityId';
 import { personasRepo } from '../modules/masterdata/data/repositories';
+import { useCatalog } from '../modules/catalog/context/CatalogContext';
 
 interface AppContextType {
   user: User | null;
   centers: Center[];
-  trainingTypes: TrainingType[];
+  trainingTypes: Service[];
   trainers: Trainer[];
   reservations: Reservation[];
   scheduleRules: ScheduleRule[];
   clients: User[];
-  addReservation: (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail'>) => Promise<void>;
+  addReservation: (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail' | 'personaId'>) => Promise<void>;
   cancelReservation: (id: string) => void;
-  getOccupancy: (centerId: string, trainingTypeId: string, trainerId: string | null, date: string, time: string) => number;
+  getOccupancy: (centerId: string, serviceId: string, trainerId: string | null, date: string, time: string) => number;
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -31,11 +33,12 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  
-  // Static data
-  const [centers] = useState<Center[]>(MOCK_CENTERS);
-  const [trainingTypes] = useState<TrainingType[]>(MOCK_TRAINING_TYPES);
-  const [trainers] = useState<Trainer[]>(MOCK_TRAINERS);
+
+  // Sourced from the Catálogo Maestro (Sprint 5) instead of a private mock copy.
+  const { centers: catalogCenters, trainers: catalogTrainers, services: catalogServices } = useCatalog();
+  const centers = catalogCenters.items;
+  const trainingTypes = catalogServices.items;
+  const trainers = catalogTrainers.items;
   const [scheduleRules] = useState<ScheduleRule[]>(SCHEDULE_RULES);
   
   // Dynamic data
@@ -185,10 +188,21 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   // --- RESERVATION ACTIONS ---
 
-  const addReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail'>) => {
+  const addReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail' | 'personaId'>) => {
     if (!user) {
         console.error("Cannot add reservation without user");
         return;
+    }
+
+    // Link the reservation to the user's Master Data Persona, if one exists.
+    // Best-effort: accounts registered before Sprint 4 have no linked Persona.
+    let personaId: string | null = null;
+    try {
+        const personas = await personasRepo.list();
+        const linkedPersona = personas.find(p => p.userId === user.id);
+        personaId = linkedPersona ? linkedPersona.id : null;
+    } catch (e) {
+        console.error('Failed to resolve linked Persona for reservation', e);
     }
 
     const newReservation: Reservation = {
@@ -196,10 +210,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       id: `r_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       userName: user.name,
       userEmail: user.email,
+      personaId,
       createdAt: Date.now(),
       status: 'CONFIRMED'
     };
-    
+
     // Simulate network delay for UX
     await new Promise(resolve => setTimeout(resolve, 500));
     
@@ -220,7 +235,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   };
 
   // --- OCCUPANCY HELPER ---
-  const getOccupancy = (centerId: string, trainingTypeId: string, trainerId: string | null, date: string, time: string): number => {
+  const getOccupancy = (centerId: string, serviceId: string, trainerId: string | null, date: string, time: string): number => {
       // 1. Base filter: Active reservations at this center, date, time
       let relevantReservations = reservations.filter(r => 
           r.status === 'CONFIRMED' &&
@@ -236,7 +251,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
           relevantReservations = relevantReservations.filter(r => r.trainerId === trainerId);
       } else {
           // If no trainer (Group Training), count reservations for that specific service type.
-          relevantReservations = relevantReservations.filter(r => r.trainingTypeId === trainingTypeId);
+          relevantReservations = relevantReservations.filter(r => r.serviceId === serviceId);
       }
 
       return relevantReservations.length;

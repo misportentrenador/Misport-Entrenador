@@ -45,7 +45,8 @@ export interface Reservation {
   userName: string; // Added for easier Admin display
   userEmail: string; // Added for easier Admin display
   centerId: string;
-  trainingTypeId: string;
+  serviceId: string;
+  personaId: string | null; // Linked Master Data Persona, if the account has one (Sprint 5)
   trainerId?: string; // Optional if training doesn't require specific trainer
   date: string; // YYYY-MM-DD
   startTime: string; // HH:mm
@@ -57,7 +58,7 @@ export interface Reservation {
 // Configuration for complex schedules
 export interface ScheduleRule {
   centerId: string;
-  trainingTypeId: string;
+  serviceId: string;
   trainerId?: string; // If undefined/null, applies to the service in general (e.g. Group classes)
   daysOfWeek: number[]; // 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
   ranges: { start: string; end: string }[]; // HH:mm format
@@ -67,7 +68,7 @@ export interface ScheduleRule {
 export interface BookingState {
   step: number;
   centerId: string | null;
-  trainingTypeId: string | null;
+  serviceId: string | null;
   trainerId: string | null;
   selectedDate: string; // YYYY-MM-DD
   selectedTime: string | null; // HH:mm

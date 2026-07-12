@@ -30,7 +30,7 @@ export const BookingWizard: React.FC = () => {
   const [state, setState] = useState<BookingState>({
     step: 1,
     centerId: null,
-    trainingTypeId: null,
+    serviceId: null,
     trainerId: null,
     selectedDate: new Date().toISOString().split('T')[0],
     selectedTime: null
@@ -42,7 +42,7 @@ export const BookingWizard: React.FC = () => {
 
   // Derived state
   const selectedCenter = centers.find(c => c.id === state.centerId);
-  const selectedType = trainingTypes.find(t => t.id === state.trainingTypeId);
+  const selectedType = trainingTypes.find(t => t.id === state.serviceId);
   const selectedTrainer = trainers.find(t => t.id === state.trainerId);
 
   // Step 1: Filter available centers
@@ -52,48 +52,48 @@ export const BookingWizard: React.FC = () => {
   const availableTrainingTypes = useMemo(() => {
     if (!state.centerId) return [];
     return trainingTypes.filter(type => {
-      return scheduleRules.some(rule => 
-        rule.centerId === state.centerId && 
-        rule.trainingTypeId === type.id
+      return scheduleRules.some(rule =>
+        rule.centerId === state.centerId &&
+        rule.serviceId === type.id
       );
     });
   }, [state.centerId, trainingTypes, scheduleRules]);
 
   // Step 3: Filter trainers based on Center, Type AND Schedule Existence
   const availableTrainers = useMemo(() => {
-    if (!state.centerId || !state.trainingTypeId) return [];
-    
-    return trainers.filter(t => 
-      t.isActive && 
-      t.centerIds.includes(state.centerId!) && 
-      t.specialties.includes(state.trainingTypeId!) &&
-      scheduleRules.some(rule => 
-        rule.centerId === state.centerId && 
-        rule.trainingTypeId === state.trainingTypeId && 
+    if (!state.centerId || !state.serviceId) return [];
+
+    return trainers.filter(t =>
+      t.isActive &&
+      t.centerIds.includes(state.centerId!) &&
+      t.serviceIds.includes(state.serviceId!) &&
+      scheduleRules.some(rule =>
+        rule.centerId === state.centerId &&
+        rule.serviceId === state.serviceId &&
         rule.trainerId === t.id
       )
     );
-  }, [state.centerId, state.trainingTypeId, trainers, scheduleRules]);
+  }, [state.centerId, state.serviceId, trainers, scheduleRules]);
 
   // Determine if we should skip trainer selection
   const shouldSkipTrainerSelection = useMemo(() => {
     if (!selectedType) return false;
     if (!selectedType.requiresTrainer) return true;
 
-    const genericRules = scheduleRules.filter(r => 
-        r.centerId === state.centerId && 
-        r.trainingTypeId === state.trainingTypeId && 
+    const genericRules = scheduleRules.filter(r =>
+        r.centerId === state.centerId &&
+        r.serviceId === state.serviceId &&
         !r.trainerId
     );
-    const specificRules = scheduleRules.filter(r => 
-        r.centerId === state.centerId && 
-        r.trainingTypeId === state.trainingTypeId && 
+    const specificRules = scheduleRules.filter(r =>
+        r.centerId === state.centerId &&
+        r.serviceId === state.serviceId &&
         r.trainerId
     );
 
     if (genericRules.length > 0 && specificRules.length === 0) return true;
     return false;
-  }, [selectedType, state.centerId, state.trainingTypeId, scheduleRules]);
+  }, [selectedType, state.centerId, state.serviceId, scheduleRules]);
 
   // Step 4: Generate Time Slots based on SCHEDULE RULES
   const timeSlots = useMemo(() => {
@@ -104,11 +104,11 @@ export const BookingWizard: React.FC = () => {
 
     const applicableRules = scheduleRules.filter(rule => {
       const matchCenter = rule.centerId === state.centerId;
-      const matchType = rule.trainingTypeId === state.trainingTypeId;
-      const matchTrainer = state.trainerId 
-        ? rule.trainerId === state.trainerId 
-        : !rule.trainerId; 
-      
+      const matchType = rule.serviceId === state.serviceId;
+      const matchTrainer = state.trainerId
+        ? rule.trainerId === state.trainerId
+        : !rule.trainerId;
+
       const matchDay = rule.daysOfWeek.includes(dayOfWeek);
       return matchCenter && matchType && matchTrainer && matchDay;
     });
@@ -138,7 +138,7 @@ export const BookingWizard: React.FC = () => {
     });
 
     return slots.sort();
-  }, [state.selectedDate, state.centerId, state.trainingTypeId, state.trainerId, selectedType, scheduleRules]);
+  }, [state.selectedDate, state.centerId, state.serviceId, state.trainerId, selectedType, scheduleRules]);
 
   useEffect(() => {
     if (selectedType) {
@@ -147,12 +147,12 @@ export const BookingWizard: React.FC = () => {
   }, [selectedType]);
 
   useEffect(() => {
-    setState(prev => ({ ...prev, trainingTypeId: null, trainerId: null, selectedTime: null }));
+    setState(prev => ({ ...prev, serviceId: null, trainerId: null, selectedTime: null }));
   }, [state.centerId]);
 
   useEffect(() => {
     setState(prev => ({ ...prev, trainerId: null, selectedTime: null }));
-  }, [state.trainingTypeId]);
+  }, [state.serviceId]);
 
   const handleNext = () => {
     if (state.step === 2) {
@@ -184,7 +184,7 @@ export const BookingWizard: React.FC = () => {
     await addReservation({
       userId: user.id,
       centerId: state.centerId!,
-      trainingTypeId: state.trainingTypeId!,
+      serviceId: state.serviceId!,
       trainerId: state.trainerId || undefined,
       date: state.selectedDate,
       startTime: state.selectedTime!,
@@ -225,7 +225,7 @@ export const BookingWizard: React.FC = () => {
         <button 
           onClick={() => {
             setIsSuccess(false);
-            setState({ step: 1, centerId: null, trainingTypeId: null, trainerId: null, selectedDate: new Date().toISOString().split('T')[0], selectedTime: null });
+            setState({ step: 1, centerId: null, serviceId: null, trainerId: null, selectedDate: new Date().toISOString().split('T')[0], selectedTime: null });
           }}
           className="bg-misportBlue hover:bg-blue-600 text-white px-10 py-4 rounded-lg font-medium tracking-wide transition-colors shadow-lg mt-4"
         >
@@ -316,13 +316,13 @@ export const BookingWizard: React.FC = () => {
                 <div 
                     key={type.id}
                     onClick={() => {
-                        setState(prev => ({ ...prev, trainingTypeId: type.id }));
+                        setState(prev => ({ ...prev, serviceId: type.id }));
                         setTimeout(() => handleNext(), 100);
                     }}
-                    className={`group p-6 bg-misportDark border border-gray-800 rounded-xl hover:border-misportBlue hover:bg-gray-900 cursor-pointer transition-all flex justify-between items-center ${state.trainingTypeId === type.id ? 'border-misportBlue bg-blue-900/10' : ''}`}
+                    className={`group p-6 bg-misportDark border border-gray-800 rounded-xl hover:border-misportBlue hover:bg-gray-900 cursor-pointer transition-all flex justify-between items-center ${state.serviceId === type.id ? 'border-misportBlue bg-blue-900/10' : ''}`}
                 >
                     <div className="flex items-center gap-6">
-                        <div className={`p-4 rounded-lg text-white transition-colors ${state.trainingTypeId === type.id ? 'bg-misportBlue' : 'bg-gray-800 group-hover:bg-misportBlue'}`}>
+                        <div className={`p-4 rounded-lg text-white transition-colors ${state.serviceId === type.id ? 'bg-misportBlue' : 'bg-gray-800 group-hover:bg-misportBlue'}`}>
                             <Dumbbell size={24} />
                         </div>
                         <div>
@@ -416,8 +416,8 @@ export const BookingWizard: React.FC = () => {
                 {timeSlots.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto pr-2 custom-scrollbar">
                         {timeSlots.map(time => {
-                            const occupancy = state.centerId && state.trainingTypeId 
-                                ? getOccupancy(state.centerId, state.trainingTypeId, state.trainerId, state.selectedDate, time) 
+                            const occupancy = state.centerId && state.serviceId
+                                ? getOccupancy(state.centerId, state.serviceId, state.trainerId, state.selectedDate, time)
                                 : 0;
                             const capacity = selectedType?.capacity || 1;
                             const isFull = occupancy >= capacity;
@@ -543,9 +543,9 @@ export const BookingWizard: React.FC = () => {
             {state.step < 5 && (
                  <button 
                  onClick={handleNext}
-                 disabled={(state.step === 4 && !state.selectedTime) || (state.step === 1 && !state.centerId) || (state.step === 2 && !state.trainingTypeId)}
+                 disabled={(state.step === 4 && !state.selectedTime) || (state.step === 1 && !state.centerId) || (state.step === 2 && !state.serviceId)}
                  className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold transition-all shadow-md ${
-                     ((state.step === 4 && !state.selectedTime) || (state.step === 1 && !state.centerId) || (state.step === 2 && !state.trainingTypeId))
+                     ((state.step === 4 && !state.selectedTime) || (state.step === 1 && !state.centerId) || (state.step === 2 && !state.serviceId))
                      ? 'bg-gray-800 text-gray-600 cursor-not-allowed shadow-none' 
                      : 'bg-misportBlue text-white hover:bg-blue-600 hover:shadow-lg hover:-translate-y-0.5'
                  }`}

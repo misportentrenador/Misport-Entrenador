@@ -18,11 +18,11 @@ import { Center, Trainer, Service, Rate, Bono } from '../types';
 const BASELINE = '2026-01-01T00:00:00.000Z';
 
 export const CENTER_SEED: Center[] = [
-  { id: 'ctr_cowork', name: 'COWORKGYM', address: 'Calle Luis Doreste Silva, 107', description: 'Espacio multifuncional con tecnología avanzada.', isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
-  { id: 'ctr_bodyplay', name: 'BODYPLAY', address: 'Arucas', description: 'Centro funcional amplio para tu mejor versión.', isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
-  { id: 'ctr_cda', name: 'CDA', address: 'Arucas', description: 'Sala moderna con equipamiento premium.', isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
-  { id: 'ctr_nucleo', name: 'NÚCLEO', address: 'Av. Alcalde José Ramirez Bethencourt, 13', description: 'Especialistas en electroestimulación.', isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
-  { id: 'ctr_matula', name: 'CENTRO MISPORT', address: 'La Matula 3B', description: 'Gimnasio boutique elegante.', isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'ctr_cowork', name: 'COWORKGYM', address: 'Calle Luis Doreste Silva, 107', description: 'Espacio multifuncional con tecnología avanzada.', isActive: true, image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=800&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'ctr_bodyplay', name: 'BODYPLAY', address: 'Arucas', description: 'Centro funcional amplio para tu mejor versión.', isActive: true, image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'ctr_cda', name: 'CDA', address: 'Arucas', description: 'Sala moderna con equipamiento premium.', isActive: true, image: 'https://images.unsplash.com/photo-1593079831268-3381b0db4a77?q=80&w=800&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'ctr_nucleo', name: 'NÚCLEO', address: 'Av. Alcalde José Ramirez Bethencourt, 13', description: 'Especialistas en electroestimulación.', isActive: true, image: 'https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=800&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'ctr_matula', name: 'CENTRO MISPORT', address: 'La Matula 3B', description: 'Gimnasio boutique elegante.', isActive: true, image: 'https://images.unsplash.com/photo-1540497077202-7c8a3999166f?q=80&w=800&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
 ];
 
 export const SERVICE_SEED: Service[] = [
@@ -33,9 +33,9 @@ export const SERVICE_SEED: Service[] = [
 ];
 
 export const TRAINER_SEED: Trainer[] = [
-  { id: 'trn_misael', name: 'Misael', centerIds: ['ctr_cowork', 'ctr_nucleo'], serviceIds: ['svc_electro'], isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
-  { id: 'trn_ruben', name: 'Rubén', centerIds: ['ctr_cowork', 'ctr_matula'], serviceIds: ['svc_electro', 'svc_personal', 'svc_grupal'], isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
-  { id: 'trn_hugo', name: 'Hugo', centerIds: ['ctr_cowork', 'ctr_bodyplay', 'ctr_cda', 'ctr_matula'], serviceIds: ['svc_electro', 'svc_personal', 'svc_grupal'], isActive: true, createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'trn_misael', name: 'Misael', centerIds: ['ctr_cowork', 'ctr_nucleo'], serviceIds: ['svc_electro'], isActive: true, avatar: 'https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?q=80&w=600&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'trn_ruben', name: 'Rubén', centerIds: ['ctr_cowork', 'ctr_matula'], serviceIds: ['svc_electro', 'svc_personal', 'svc_grupal'], isActive: true, avatar: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=600&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
+  { id: 'trn_hugo', name: 'Hugo', centerIds: ['ctr_cowork', 'ctr_bodyplay', 'ctr_cda', 'ctr_matula'], serviceIds: ['svc_electro', 'svc_personal', 'svc_grupal'], isActive: true, avatar: 'https://images.unsplash.com/photo-1483721310020-03333e577078?q=80&w=600&auto=format&fit=crop', createdAt: BASELINE, updatedAt: BASELINE },
 ];
 
 export const RATE_SEED: Rate[] = [

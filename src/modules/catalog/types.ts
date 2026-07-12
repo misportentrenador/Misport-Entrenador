@@ -13,6 +13,7 @@ export interface Center extends Entity, Timestamps {
   address: string;
   description: string;
   isActive: boolean;
+  image?: string;
 }
 
 export interface Trainer extends Entity, Timestamps {
@@ -20,6 +21,7 @@ export interface Trainer extends Entity, Timestamps {
   centerIds: string[];
   serviceIds: string[];
   isActive: boolean;
+  avatar?: string;
 }
 
 export interface Service extends Entity, Timestamps {

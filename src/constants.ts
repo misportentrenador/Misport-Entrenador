@@ -114,11 +114,14 @@ export const MOCK_TRAINERS: Trainer[] = [
 ];
 
 // --- 4. SCHEDULE RULES ---
+// NOTE (Sprint 5): centerId/serviceId/trainerId values here reference the
+// Catálogo Maestro's ids (ctr_/svc_/trn_), not the legacy MOCK_* ids above —
+// AppContext now sources centers/trainers/services from Catálogo.
 export const SCHEDULE_RULES: ScheduleRule[] = [
   // --- CENTRO MISPORT (La Matula) ---
   {
-    centerId: 'c_matula',
-    trainingTypeId: 't_group',
+    centerId: 'ctr_matula',
+    serviceId: 'svc_grupal',
     trainerId: undefined, // Indiferente
     daysOfWeek: [1, 3], // Lun, Mie
     // UPDATED: Start at 19:00 instead of 18:00
@@ -127,9 +130,9 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
     ]
   },
   {
-    centerId: 'c_matula',
-    trainingTypeId: 't_group',
-    trainerId: undefined, 
+    centerId: 'ctr_matula',
+    serviceId: 'svc_grupal',
+    trainerId: undefined,
     daysOfWeek: [2, 4], // Mar, Jue
     ranges: [
         { start: '09:00', end: '10:00' },
@@ -137,8 +140,8 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
     ]
   },
   {
-    centerId: 'c_matula',
-    trainingTypeId: 't_group',
+    centerId: 'ctr_matula',
+    serviceId: 'svc_grupal',
     trainerId: undefined,
     daysOfWeek: [5], // Vie
     ranges: [
@@ -147,16 +150,16 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
   },
   // Personal at Matula (Ruben, Hugo) - L-V 10-18
   {
-    centerId: 'c_matula',
-    trainingTypeId: 't_personal',
-    trainerId: 'tr_ruben',
+    centerId: 'ctr_matula',
+    serviceId: 'svc_personal',
+    trainerId: 'trn_ruben',
     daysOfWeek: [1, 2, 3, 4, 5],
     ranges: [{ start: '10:00', end: '18:00' }]
   },
   {
-    centerId: 'c_matula',
-    trainingTypeId: 't_personal',
-    trainerId: 'tr_hugo',
+    centerId: 'ctr_matula',
+    serviceId: 'svc_personal',
+    trainerId: 'trn_hugo',
     daysOfWeek: [1, 2, 3, 4, 5],
     ranges: [{ start: '10:00', end: '18:00' }]
   },
@@ -164,49 +167,49 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
   // --- COWORKGYM ---
   // Electro Misael
   {
-    centerId: 'c_cowork',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_misael',
+    centerId: 'ctr_cowork',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_misael',
     daysOfWeek: [1, 3], // L, X
     ranges: [{ start: '08:00', end: '12:00' }]
   },
   {
-    centerId: 'c_cowork',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_misael',
+    centerId: 'ctr_cowork',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_misael',
     daysOfWeek: [1, 2, 3, 4], // L-J
     ranges: [{ start: '17:00', end: '20:00' }]
   },
   // Electro Ruben
   {
-    centerId: 'c_cowork',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_ruben',
+    centerId: 'ctr_cowork',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_ruben',
     daysOfWeek: [1, 2, 3, 4, 5],
     ranges: [{ start: '09:00', end: '14:00' }]
   },
   // Electro Hugo
   {
-    centerId: 'c_cowork',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_hugo',
+    centerId: 'ctr_cowork',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_hugo',
     daysOfWeek: [1, 2, 3, 4, 5],
     ranges: [{ start: '08:00', end: '12:00' }]
   },
-  // Personal Ruben & Hugo at Cowork (Assumed same availability as generic or specific needed? 
+  // Personal Ruben & Hugo at Cowork (Assumed same availability as generic or specific needed?
   // Prompt didn't specify hours for Personal at Cowork, adding placeholder or re-using Logic)
   // *Assumption*: Prompt only detailed Electro hours for Cowork. I will add a generic block for Personal at Cowork for Ruben/Hugo to make it work.
   {
-    centerId: 'c_cowork',
-    trainingTypeId: 't_personal',
-    trainerId: 'tr_ruben',
+    centerId: 'ctr_cowork',
+    serviceId: 'svc_personal',
+    trainerId: 'trn_ruben',
     daysOfWeek: [1, 3, 5],
     ranges: [{ start: '09:00', end: '13:00' }]
   },
   {
-    centerId: 'c_cowork',
-    trainingTypeId: 't_personal',
-    trainerId: 'tr_hugo',
+    centerId: 'ctr_cowork',
+    serviceId: 'svc_personal',
+    trainerId: 'trn_hugo',
     daysOfWeek: [2, 4],
     ranges: [{ start: '09:00', end: '13:00' }]
   },
@@ -214,9 +217,9 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
   // --- BODYPLAY ---
   // Electro Hugo
   {
-    centerId: 'c_bodyplay',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_hugo',
+    centerId: 'ctr_bodyplay',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_hugo',
     daysOfWeek: [2], // Martes
     ranges: [
         { start: '08:00', end: '12:00' },
@@ -227,9 +230,9 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
   // --- CDA ---
   // Electro Hugo
   {
-    centerId: 'c_cda',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_hugo',
+    centerId: 'ctr_cda',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_hugo',
     daysOfWeek: [3], // Miercoles
     ranges: [
         { start: '08:00', end: '12:00' },
@@ -240,9 +243,9 @@ export const SCHEDULE_RULES: ScheduleRule[] = [
   // --- NUCLEO ---
   // Electro Misael (Assuming same as Cowork? Prompt didn't specify NUCLEO hours explicitly, borrowing standard shift)
   {
-    centerId: 'c_nucleo',
-    trainingTypeId: 't_electro',
-    trainerId: 'tr_misael',
+    centerId: 'ctr_nucleo',
+    serviceId: 'svc_electro',
+    trainerId: 'trn_misael',
     daysOfWeek: [2, 4], // M, J
     ranges: [{ start: '09:00', end: '13:00' }]
   }
