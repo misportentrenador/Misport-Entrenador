@@ -9,4 +9,10 @@ export const STORAGE_KEYS = {
   registeredUsers: 'misport_db_users',
   financeParams: 'misport_finance_params',
   financeEntries: 'misport_finance_entries',
+  catalogCenters: 'misport_catalog_centers',
+  catalogTrainers: 'misport_catalog_trainers',
+  catalogServices: 'misport_catalog_services',
+  catalogRates: 'misport_catalog_rates',
+  catalogBonos: 'misport_catalog_bonos',
+  catalogRecursos: 'misport_catalog_recursos',
 } as const;

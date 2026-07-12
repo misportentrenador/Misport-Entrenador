@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { FinanceProvider } from './context/FinanceContext';
+import { CatalogProvider } from './modules/catalog/context/CatalogContext';
 import { BookingWizard } from './components/BookingWizard';
 import { Calendar, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { AdminShell } from './layouts/AdminShell';
@@ -350,12 +351,14 @@ const App: React.FC = () => {
     <ErrorBoundary>
         <NotificationProvider>
             <AppProvider>
-                <FinanceProvider>
-                    <HashRouter>
-                        <Layout />
-                    </HashRouter>
-                    <ToastViewport />
-                </FinanceProvider>
+                <CatalogProvider>
+                    <FinanceProvider>
+                        <HashRouter>
+                            <Layout />
+                        </HashRouter>
+                        <ToastViewport />
+                    </FinanceProvider>
+                </CatalogProvider>
             </AppProvider>
         </NotificationProvider>
     </ErrorBoundary>

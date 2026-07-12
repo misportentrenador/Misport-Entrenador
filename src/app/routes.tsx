@@ -1,5 +1,5 @@
 import React from 'react';
-import { LucideIcon, Home, Users, CalendarDays, ClipboardList, MapPin, UserCog, Euro, Sparkles } from 'lucide-react';
+import { LucideIcon, Home, Users, CalendarDays, ClipboardList, MapPin, UserCog, Euro, Sparkles, Layers } from 'lucide-react';
 import { InicioPage } from '../pages/admin/InicioPage';
 import { ClientesPage } from '../pages/admin/ClientesPage';
 import { AgendaPage } from '../pages/admin/AgendaPage';
@@ -8,6 +8,7 @@ import { CentrosPage } from '../pages/admin/CentrosPage';
 import { EntrenadoresPage } from '../pages/admin/EntrenadoresPage';
 import { FinanzasPage } from '../pages/admin/FinanzasPage';
 import { ProximamentePage } from '../pages/admin/ProximamentePage';
+import { CatalogoPage } from '../modules/catalog/pages/CatalogoPage';
 
 /**
  * Single source of truth for the admin section: both the router (App.tsx)
@@ -29,6 +30,7 @@ export const ADMIN_ROUTES: AdminRouteConfig[] = [
   { path: 'clientes', label: 'Clientes', icon: Users, element: <ClientesPage />, showInNav: true },
   { path: 'agenda', label: 'Agenda', icon: CalendarDays, element: <AgendaPage />, showInNav: true },
   { path: 'reservas', label: 'Reservas', icon: ClipboardList, element: <ReservasPage />, showInNav: true },
+  { path: 'catalogo', label: 'Catálogo', icon: Layers, element: <CatalogoPage />, showInNav: true },
   { path: 'centros', label: 'Centros', icon: MapPin, element: <CentrosPage />, showInNav: true },
   { path: 'entrenadores', label: 'Entrenadores', icon: UserCog, element: <EntrenadoresPage />, showInNav: true },
   { path: 'finanzas', label: 'Finanzas', icon: Euro, element: <FinanzasPage />, showInNav: true },
