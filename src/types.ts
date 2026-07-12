@@ -76,7 +76,7 @@ export interface BookingState {
 
 // --- FINANCE MODULE (Panel de control económico) ---
 
-export type FinanceServiceName = 'Electroestimulación' | 'Entrenamiento online' | 'Entrenamiento grupal';
+export type FinanceServiceName = 'Electroestimulación' | 'Entrenamiento personal' | 'Entrenamiento online' | 'Entrenamiento grupal';
 
 export interface ServiceRate {
   price: number;
@@ -88,13 +88,12 @@ export interface GroupRate extends ServiceRate {
   days: 1 | 2 | 3;
 }
 
-// Fixed/editable parameters, equivalent to the "Modelo" sheet
+// Ajustes fiscales de Finanzas. Las tarifas por servicio (precio, pago
+// entrenador, pago centro) viven en el Catálogo Maestro (Rate) desde el
+// Sprint 6 — Finanzas ya no guarda su propia copia para no duplicar datos.
 export interface FinanceParams {
   igic: number; // e.g. 0.07
   profitTax: number; // e.g. 0.2
-  electro: ServiceRate;
-  online: ServiceRate;
-  group: GroupRate[]; // rates by days/week, indexed by `days`
 }
 
 // A logged block of sessions, equivalent to one row in the "Registro" sheet

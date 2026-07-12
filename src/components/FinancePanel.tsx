@@ -1,10 +1,11 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Euro, Calculator, Save, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { useFinance } from '../context/FinanceContext';
-import { FINANCE_SERVICES, FINANCE_ONLINE_CENTER, DEFAULT_FINANCE_PARAMS } from '../constants';
-import { FinanceParams, FinanceServiceName, ServiceRate, FinanceEntry, FinanceEntryTotals } from '../types';
+import { useFinance, findFinanceRate } from '../context/FinanceContext';
+import { useCatalog } from '../modules/catalog/context/CatalogContext';
+import { FINANCE_SERVICES, FINANCE_ONLINE_CENTER } from '../constants';
+import { FinanceServiceName, ServiceRate, GroupRate, FinanceEntry, FinanceEntryTotals } from '../types';
 import { formatEUR } from '../shared/lib/format';
 
 const inputCls =
@@ -51,12 +52,57 @@ function groupSum(
 }
 
 // --- SUB-TAB: PARÁMETROS ---
+// Borrador local de edición: IGIC/Impuesto son propios de Finanzas: las
+// tarifas (precio, pago entrenador, pago centro) se leen y se guardan en
+// el Catálogo Maestro (Rate) — Finanzas ya no las duplica (Sprint 6).
+interface RatesDraft {
+  igic: number;
+  profitTax: number;
+  electro: ServiceRate;
+  personal: ServiceRate;
+  online: ServiceRate;
+  group: GroupRate[];
+}
+
 const ParametrosTab: React.FC = () => {
   const { params, updateParams } = useFinance();
-  const [draft, setDraft] = useState<FinanceParams>(params);
+  const { rates } = useCatalog();
+
+  const buildDraft = (): RatesDraft => {
+    const toRate = (r?: { price: number; trainerPay: number; centerPay: number }): ServiceRate => ({
+      price: r?.price ?? 0,
+      trainerPay: r?.trainerPay ?? 0,
+      centerPay: r?.centerPay ?? 0,
+    });
+    return {
+      igic: params.igic,
+      profitTax: params.profitTax,
+      electro: toRate(findFinanceRate(rates.items, 'Electroestimulación')),
+      personal: toRate(findFinanceRate(rates.items, 'Entrenamiento personal')),
+      online: toRate(findFinanceRate(rates.items, 'Entrenamiento online')),
+      group: [1, 2, 3].map(days => ({
+        days: days as 1 | 2 | 3,
+        ...toRate(findFinanceRate(rates.items, 'Entrenamiento grupal', days)),
+      })),
+    };
+  };
+
+  const [draft, setDraft] = useState<RatesDraft>(buildDraft);
+  const [hydrated, setHydrated] = useState(false);
   const [savedMsg, setSavedMsg] = useState(false);
 
-  const updateRate = (service: 'electro' | 'online', field: keyof ServiceRate, value: number) => {
+  // Las tarifas del Catálogo cargan de forma asíncrona (localStorage vía
+  // repositorio); una vez disponibles, se usan para hidratar el borrador
+  // una única vez, sin pisar ediciones del usuario en curso.
+  useEffect(() => {
+    if (!rates.loading && !hydrated) {
+      setDraft(buildDraft());
+      setHydrated(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rates.loading, hydrated]);
+
+  const updateRate = (service: 'electro' | 'personal' | 'online', field: keyof ServiceRate, value: number) => {
     setDraft(d => ({ ...d, [service]: { ...d[service], [field]: value } }));
   };
 
@@ -64,13 +110,26 @@ const ParametrosTab: React.FC = () => {
     setDraft(d => ({ ...d, group: d.group.map(g => (g.days === days ? { ...g, [field]: value } : g)) }));
   };
 
-  const handleSave = () => {
-    updateParams(draft);
+  const handleSave = async () => {
+    updateParams({ igic: draft.igic, profitTax: draft.profitTax });
+
+    const persist = async (service: FinanceServiceName, patch: ServiceRate, groupDays?: number) => {
+      const rate = findFinanceRate(rates.items, service, groupDays);
+      if (rate) await rates.update(rate.id, patch);
+    };
+    await persist('Electroestimulación', draft.electro);
+    await persist('Entrenamiento personal', draft.personal);
+    await persist('Entrenamiento online', draft.online);
+    for (const g of draft.group) await persist('Entrenamiento grupal', g, g.days);
+
     setSavedMsg(true);
     setTimeout(() => setSavedMsg(false), 2000);
   };
 
-  const handleReset = () => setDraft(DEFAULT_FINANCE_PARAMS);
+  // Ya no existe un "valor de fábrica" hardcodeado para las tarifas (para no
+  // duplicar el Catálogo): "Restaurar" descarta los cambios sin guardar y
+  // vuelve a los valores vigentes en Catálogo/Finanzas.
+  const handleDiscard = () => setDraft(buildDraft());
 
   const RateRow: React.FC<{ title: string; rate: ServiceRate; onChange: (field: keyof ServiceRate, value: number) => void }> = ({
     title,
@@ -101,7 +160,7 @@ const ParametrosTab: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <ColorLegend items={[{ swatch: 'bg-amber-600', label: 'Parámetro fijo (Modelo económico)' }]} />
+      <ColorLegend items={[{ swatch: 'bg-amber-600', label: 'Parámetro fijo (Catálogo Maestro / Modelo económico)' }]} />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
@@ -119,6 +178,7 @@ const ParametrosTab: React.FC = () => {
       <div className="space-y-3">
         <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Servicios de precio fijo</h3>
         <RateRow title="Electroestimulación" rate={draft.electro} onChange={(f, v) => updateRate('electro', f, v)} />
+        <RateRow title="Entrenamiento personal" rate={draft.personal} onChange={(f, v) => updateRate('personal', f, v)} />
         <RateRow title="Entrenamiento online" rate={draft.online} onChange={(f, v) => updateRate('online', f, v)} />
       </div>
 
@@ -135,9 +195,9 @@ const ParametrosTab: React.FC = () => {
           className="flex items-center gap-2 bg-misportBlue hover:bg-blue-600 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg">
           <Save size={16} /> Guardar cambios
         </button>
-        <button onClick={handleReset}
+        <button onClick={handleDiscard}
           className="flex items-center gap-2 text-gray-400 hover:text-white text-sm font-medium px-4 py-3 rounded-lg border border-gray-800 hover:border-gray-700 transition-all">
-          <RotateCcw size={14} /> Restaurar valores por defecto
+          <RotateCcw size={14} /> Descartar cambios sin guardar
         </button>
         {savedMsg && <span className="text-green-400 text-sm font-bold">Guardado ✓</span>}
       </div>

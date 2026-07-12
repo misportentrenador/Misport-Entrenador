@@ -275,18 +275,14 @@ export const FINANCE_ONLINE_CENTER = 'Online / Sin centro';
 
 export const FINANCE_SERVICES: FinanceServiceName[] = [
   'Electroestimulación',
+  'Entrenamiento personal',
   'Entrenamiento online',
   'Entrenamiento grupal',
 ];
 
+// Solo ajustes fiscales: las tarifas por servicio viven en el Catálogo
+// Maestro (Rate) desde el Sprint 6, para no duplicar esos datos aquí.
 export const DEFAULT_FINANCE_PARAMS: FinanceParams = {
   igic: 0.07,
   profitTax: 0.2,
-  electro: { price: 30, trainerPay: 8, centerPay: 8 },
-  online: { price: 50, trainerPay: 30, centerPay: 0 },
-  group: [
-    { days: 1, price: 40, trainerPay: 16, centerPay: 0 },
-    { days: 2, price: 50, trainerPay: 20, centerPay: 0 },
-    { days: 3, price: 60, trainerPay: 24, centerPay: 0 },
-  ],
 };

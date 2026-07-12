@@ -1,23 +1,43 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, ServiceRate } from '../types';
+import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName } from '../types';
+import { Rate } from '../modules/catalog/types';
+import { useCatalog } from '../modules/catalog/context/CatalogContext';
 import { DEFAULT_FINANCE_PARAMS } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
 
 const PARAMS_KEY = STORAGE_KEYS.financeParams;
 const ENTRIES_KEY = STORAGE_KEYS.financeEntries;
 
-function getBaseRate(params: FinanceParams, service: FinanceServiceName, groupDays?: number): ServiceRate | null {
-  if (service === 'Electroestimulación') return params.electro;
-  if (service === 'Entrenamiento online') return params.online;
-  if (service === 'Entrenamiento grupal') {
-    return params.group.find(g => g.days === groupDays) ?? null;
-  }
-  return null;
+/**
+ * Puente Finanzas <-> Catálogo Maestro (Sprint 6): cada servicio de
+ * Finanzas de precio fijo es un servicio independiente del Catálogo —
+ * Entrenamiento Personal y Entrenamiento Online no se unifican, cada uno
+ * mantiene su propia identidad y tarifa (decisión de negocio). Único punto
+ * de esta correspondencia: si cambia, solo se toca aquí.
+ */
+export const SERVICE_TO_CATALOG_ID: Record<Exclude<FinanceServiceName, 'Entrenamiento grupal'>, string> = {
+  'Electroestimulación': 'svc_electro',
+  'Entrenamiento personal': 'svc_personal',
+  'Entrenamiento online': 'svc_online',
+};
+export const GROUP_DAYS_TO_VARIANT: Record<1 | 2 | 3, string> = {
+  1: '1 día/semana',
+  2: '2 días/semana',
+  3: '3 días/semana',
+};
+
+/** Busca la tarifa vigente del Catálogo para un servicio de Finanzas. */
+export function findFinanceRate(rates: Rate[], service: FinanceServiceName, groupDays?: number): Rate | undefined {
+  const serviceId = service === 'Entrenamiento grupal' ? 'svc_grupal' : SERVICE_TO_CATALOG_ID[service];
+  const variant = service === 'Entrenamiento grupal' ? GROUP_DAYS_TO_VARIANT[(groupDays ?? 1) as 1 | 2 | 3] : null;
+  return rates
+    .filter(r => r.serviceId === serviceId && r.variant === variant)
+    .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
 }
 
-export function computeEntryTotals(entry: FinanceEntry, params: FinanceParams): FinanceEntryTotals {
-  const base = getBaseRate(params, entry.service, entry.groupDays);
+export function computeEntryTotals(entry: FinanceEntry, params: FinanceParams, rates: Rate[]): FinanceEntryTotals {
+  const base = findFinanceRate(rates, entry.service, entry.groupDays);
 
   const unitPrice = entry.manualPrice ?? base?.price ?? 0;
   const unitTrainerPay = entry.manualTrainerPay ?? base?.trainerPay ?? 0;
@@ -51,6 +71,7 @@ interface FinanceContextType {
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { rates } = useCatalog();
   const [params, setParams] = useState<FinanceParams>(DEFAULT_FINANCE_PARAMS);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [loaded, setLoaded] = useState(false);
@@ -98,7 +119,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     setEntries(prev => prev.filter(e => e.id !== id));
   };
 
-  const computeTotals = (entry: FinanceEntry) => computeEntryTotals(entry, params);
+  const computeTotals = (entry: FinanceEntry) => computeEntryTotals(entry, params, rates.items);
 
   return (
     <FinanceContext.Provider value={{ params, updateParams, entries, addEntry, deleteEntry, computeTotals }}>
