@@ -191,16 +191,38 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   const addReservation = async (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail' | 'personaId'>) => {
     if (!user) {
-        console.error("Cannot add reservation without user");
+        console.error("Cannot add reservation without an authenticated session");
         return;
     }
 
-    // Link the reservation to the user's Master Data Persona, if one exists.
-    // Best-effort: accounts registered before Sprint 4 have no linked Persona.
+    // Resolve the identity of the actual reservee (reservationData.userId) —
+    // not necessarily the logged-in session. BookingWizard's self-service
+    // flow always passes userId === user.id (zero behavior change there);
+    // the CRM ficha (Sprint 10) can pass a different Persona's linked
+    // userId to book on their behalf, reusing this same engine.
+    let userName = user.name;
+    let userEmail = user.email;
+    if (reservationData.userId !== user.id) {
+        try {
+            const storedUsersString = localStorage.getItem(STORAGE_KEYS.registeredUsers);
+            const users: User[] = storedUsersString ? JSON.parse(storedUsersString) : [];
+            const targetUser = users.find(u => u.id === reservationData.userId);
+            if (targetUser) {
+                userName = targetUser.name;
+                userEmail = targetUser.email;
+            }
+        } catch (e) {
+            console.error('Failed to resolve target user for the reservation', e);
+        }
+    }
+
+    // Link the reservation to the reservee's Master Data Persona, if one
+    // exists. Best-effort: accounts registered before Sprint 4 have no
+    // linked Persona.
     let personaId: string | null = null;
     try {
         const personas = await personasRepo.list();
-        const linkedPersona = personas.find(p => p.userId === user.id);
+        const linkedPersona = personas.find(p => p.userId === reservationData.userId);
         personaId = linkedPersona ? linkedPersona.id : null;
     } catch (e) {
         console.error('Failed to resolve linked Persona for reservation', e);
@@ -209,8 +231,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const newReservation: Reservation = {
       ...reservationData,
       id: `r_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-      userName: user.name,
-      userEmail: user.email,
+      userName,
+      userEmail,
       personaId,
       createdAt: Date.now(),
       status: 'CONFIRMED'

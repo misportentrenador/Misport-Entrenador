@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeft, User, Dumbbell, HeartPulse, Briefcase, Euro, Users, History } from 'lucide-react';
+import { ArrowLeft, User, Dumbbell, HeartPulse, Briefcase, Euro, Users, History, CalendarPlus } from 'lucide-react';
 import { useMasterData } from '../../masterdata/context/MasterDataContext';
+import { BookingWizard } from '../../../components/BookingWizard';
 import { PageHeader } from '../../../components/ui/PageHeader';
 import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Spinner } from '../../../components/ui/Spinner';
+import { PersonaDashboardCard } from './PersonaDashboardCard';
 import { InformacionBasicaSection } from './sections/InformacionBasicaSection';
 import { PerfilDeportivoSection } from './sections/PerfilDeportivoSection';
 import { PerfilSanitarioSection } from './sections/PerfilSanitarioSection';
@@ -14,9 +16,10 @@ import { InformacionEconomicaSection } from './sections/InformacionEconomicaSect
 import { RelacionesSection } from './sections/RelacionesSection';
 import { HistorialSection } from './sections/HistorialSection';
 
-type TabId = 'basica' | 'deportiva' | 'sanitaria' | 'comercial' | 'economica' | 'relaciones' | 'historial';
+type TabId = 'reservar' | 'basica' | 'deportiva' | 'sanitaria' | 'comercial' | 'economica' | 'relaciones' | 'historial';
 
 const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
+  { id: 'reservar', label: 'Reservar', icon: CalendarPlus },
   { id: 'basica', label: 'Básica', icon: User },
   { id: 'deportiva', label: 'Deportiva', icon: Dumbbell },
   { id: 'sanitaria', label: 'Sanitaria', icon: HeartPulse },
@@ -27,9 +30,10 @@ const TABS: { id: TabId; label: string; icon: React.ElementType }[] = [
 ];
 
 /**
- * Ficha única del CRM (Sprint 9). Sin dashboard ni acciones rápidas
- * todavía (Sprint 10). Cada sección es su propio componente — nunca un
- * formulario monolítico.
+ * Ficha única del CRM (Sprints 9-10) — centro operativo. Cada sección es su
+ * propio componente, nunca un formulario monolítico. La pestaña "Reservar"
+ * (Sprint 10) renderiza el propio BookingWizard del cliente — mismo motor,
+ * mismas reglas de disponibilidad, sin un segundo sistema de reservas.
  */
 export const FichaPersonaPage: React.FC = () => {
   const { personaId } = useParams<{ personaId: string }>();
@@ -57,6 +61,8 @@ export const FichaPersonaPage: React.FC = () => {
         actions={<Link to="/admin/crm"><Button variant="ghost"><ArrowLeft size={16} /> Volver al CRM</Button></Link>}
       />
 
+      <PersonaDashboardCard persona={persona} onNavigate={setTab} />
+
       <div className="flex border-b border-gray-800 overflow-x-auto">
         {TABS.map(t => (
           <button
@@ -70,6 +76,7 @@ export const FichaPersonaPage: React.FC = () => {
         ))}
       </div>
 
+      {tab === 'reservar' && <BookingWizard onBehalfOfPersonaId={persona.id} />}
       {tab === 'basica' && <InformacionBasicaSection persona={persona} />}
       {tab === 'deportiva' && <PerfilDeportivoSection personaId={persona.id} />}
       {tab === 'sanitaria' && <PerfilSanitarioSection personaId={persona.id} />}

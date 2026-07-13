@@ -112,6 +112,8 @@ export interface FinanceEntry {
   createdAt: number;
   /** Reserva de origen si esta entrada se generó automáticamente al completar una sesión (Sprint 7). */
   sourceReservationId?: string;
+  /** Persona (Master Data) a quien se factura, cuando existe esa relación (CRM, Sprint 10, decisión 3). */
+  personaId?: string;
 }
 
 // Computed totals for a single FinanceEntry

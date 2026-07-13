@@ -1,16 +1,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
+import { useMasterData } from '../modules/masterdata/context/MasterDataContext';
 import { BookingState } from '../types';
 import { generateFitnessTip } from '../services/geminiService';
-import { 
-  MapPin, 
-  Dumbbell, 
-  User as UserIcon, 
-  Calendar, 
-  Clock, 
-  CheckCircle, 
-  ChevronRight, 
+import {
+  MapPin,
+  Dumbbell,
+  User as UserIcon,
+  Calendar,
+  Clock,
+  CheckCircle,
+  ChevronRight,
   ChevronLeft,
   Sparkles,
   AlertCircle
@@ -24,9 +25,23 @@ const STEPS = [
   'Confirmar'
 ];
 
-export const BookingWizard: React.FC = () => {
+interface BookingWizardProps {
+  /**
+   * Reservar en nombre de esta Persona en vez del usuario de la sesión
+   * (CRM, Sprint 10: "Reservar" desde la Ficha CRM). Mismo motor de
+   * reservas, misma disponibilidad, mismas reglas — solo cambia a quién
+   * se atribuye la reserva.
+   */
+  onBehalfOfPersonaId?: string;
+}
+
+export const BookingWizard: React.FC<BookingWizardProps> = ({ onBehalfOfPersonaId }) => {
   const { centers, trainingTypes, trainers, addReservation, getOccupancy, user, scheduleRules } = useApp();
-  
+  const { personas } = useMasterData();
+
+  const onBehalfOfPersona = onBehalfOfPersonaId ? personas.items.find(p => p.id === onBehalfOfPersonaId) : undefined;
+  const targetUserId = onBehalfOfPersonaId ? (onBehalfOfPersona?.userId ?? null) : (user?.id ?? null);
+
   const [state, setState] = useState<BookingState>({
     step: 1,
     centerId: null,
@@ -173,16 +188,16 @@ export const BookingWizard: React.FC = () => {
   };
 
   const handleConfirm = async () => {
-    if (!user) return;
+    if (!targetUserId) return;
     setIsSubmitting(true);
-    
+
     const [h, m] = state.selectedTime!.split(':').map(Number);
     const date = new Date();
     date.setHours(h, m + (selectedType?.durationMinutes || 60));
     const endTime = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
 
     await addReservation({
-      userId: user.id,
+      userId: targetUserId,
       centerId: state.centerId!,
       serviceId: state.serviceId!,
       trainerId: state.trainerId || undefined,
@@ -194,6 +209,19 @@ export const BookingWizard: React.FC = () => {
     setIsSubmitting(false);
     setIsSuccess(true);
   };
+
+  // Reservar "en nombre de" solo es posible si la Persona ya tiene una
+  // cuenta de cliente vinculada (Reservation.userId es obligatorio en el
+  // modelo actual) — no se inventa una cuenta ni se relaja ese requisito.
+  if (onBehalfOfPersonaId && !targetUserId) {
+    return (
+      <div className="max-w-xl mx-auto bg-misportDark p-8 rounded-2xl shadow-xl border border-gray-800 mt-4 text-center">
+        <AlertCircle className="mx-auto text-gray-600 mb-4" size={40} />
+        <p className="text-gray-300 font-medium">Esta persona no tiene una cuenta de cliente vinculada.</p>
+        <p className="text-gray-500 text-sm mt-2">No se puede reservar en su nombre todavía — necesita registrarse como cliente para poder reservar sesiones.</p>
+      </div>
+    );
+  }
 
   if (isSuccess) {
     return (

@@ -48,6 +48,7 @@ export const ReservasPage: React.FC = () => {
         groupDays: financeService === 'Entrenamiento grupal' ? 1 : undefined,
         quantity: 1,
         sourceReservationId: r.id,
+        personaId: r.personaId ?? undefined,
       });
     }
   };

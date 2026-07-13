@@ -85,9 +85,25 @@ export type BonoClienteStatus = 'active' | 'consumed' | 'expired' | 'cancelled';
 /**
  * La compra/activación real de un Bono (producto, Catálogo) por una
  * Persona. Bono (Catálogo) sigue siendo el producto; esto es la instancia.
- * El consumo automático de sesiones queda fuera de alcance de este Sprint
- * (mismo criterio que Catálogo dejó Bonos sin lógica de consumo en el
- * Sprint 2) — se prepara la entidad, no se conecta todavía.
+ *
+ * REGLA OFICIAL DE MISPORT OS — Consumo de Bonos (definida en el Sprint 10,
+ * implementación pendiente de un Sprint dedicado):
+ *   1. Al marcar una sesión como completada, el sistema consume
+ *      automáticamente un BonoCliente compatible con el servicio realizado.
+ *   2. Nunca consume un bono cuyo `bonoId` no corresponda al servicio de la
+ *      sesión completada.
+ *   3. Si hay varios bonos compatibles, se consume primero el de
+ *      `expiryDate` más próxima.
+ *   4. Si ninguno de los compatibles tiene `expiryDate` (caducidad), se
+ *      consume el más antiguo por `purchaseDate`.
+ *   5. Si no hay saldo suficiente (`sessionsRemaining` de todos los bonos
+ *      compatibles agotado), la sesión queda marcada como "Pendiente de
+ *      regularizar" y se avisa al entrenador antes de finalizar el
+ *      proceso — nunca se descuenta saldo negativo ni se aplica ninguna
+ *      regla fuera de las aquí definidas.
+ *
+ * Esta lógica está documentada y aprobada, pero deliberadamente NO
+ * implementada todavía — llegará en un Sprint dedicado de la Release 0.3.
  */
 export interface BonoCliente extends Entity, Timestamps {
   personaId: string;
