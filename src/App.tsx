@@ -5,6 +5,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { FinanceProvider } from './context/FinanceContext';
 import { CatalogProvider } from './modules/catalog/context/CatalogContext';
 import { MasterDataProvider } from './modules/masterdata/context/MasterDataContext';
+import { CRMProvider } from './modules/crm/context/CRMContext';
 import { BookingWizard } from './components/BookingWizard';
 import { Calendar, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { AdminShell } from './layouts/AdminShell';
@@ -360,10 +361,12 @@ const App: React.FC = () => {
                 <MasterDataProvider>
                     <AppProvider>
                         <FinanceProvider>
-                            <HashRouter>
-                                <Layout />
-                            </HashRouter>
-                            <ToastViewport />
+                            <CRMProvider>
+                                <HashRouter>
+                                    <Layout />
+                                </HashRouter>
+                                <ToastViewport />
+                            </CRMProvider>
                         </FinanceProvider>
                     </AppProvider>
                 </MasterDataProvider>
