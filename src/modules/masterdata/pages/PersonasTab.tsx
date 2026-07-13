@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Plus, Pencil, Contact } from 'lucide-react';
+import { Plus, Pencil, Contact, IdCard } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useMasterData } from '../context/MasterDataContext';
 import { Table, TableColumn } from '../../../components/ui/Table';
 import { Modal } from '../../../components/ui/Modal';
@@ -67,6 +68,9 @@ export const PersonasTab: React.FC = () => {
     {
       key: 'actions', header: '', align: 'right', render: p => (
         <div className="flex justify-end items-center gap-3">
+          <Link to={`/admin/crm/personas/${p.id}`} className="text-gray-400 hover:text-white flex items-center gap-1 text-xs font-bold whitespace-nowrap" title="Ver ficha CRM">
+            <IdCard size={16} /> Ver ficha CRM
+          </Link>
           <button onClick={() => openEdit(p)} className="text-gray-400 hover:text-white" title="Editar"><Pencil size={16} /></button>
           <button onClick={() => toggleActive(p)} className="text-xs text-gray-400 hover:text-white underline whitespace-nowrap">
             {p.isActive ? 'Desactivar' : 'Activar'}

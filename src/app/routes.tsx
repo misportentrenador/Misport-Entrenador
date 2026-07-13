@@ -1,5 +1,5 @@
 import React from 'react';
-import { LucideIcon, Home, Users, CalendarDays, ClipboardList, MapPin, UserCog, Euro, Sparkles, Layers, Database } from 'lucide-react';
+import { LucideIcon, Home, Users, CalendarDays, ClipboardList, MapPin, UserCog, Euro, Sparkles, Layers, Database, IdCard } from 'lucide-react';
 import { InicioPage } from '../pages/admin/InicioPage';
 import { ClientesPage } from '../pages/admin/ClientesPage';
 import { AgendaPage } from '../pages/admin/AgendaPage';
@@ -10,6 +10,8 @@ import { FinanzasPage } from '../pages/admin/FinanzasPage';
 import { ProximamentePage } from '../pages/admin/ProximamentePage';
 import { CatalogoPage } from '../modules/catalog/pages/CatalogoPage';
 import { DatosMaestrosPage } from '../modules/masterdata/pages/DatosMaestrosPage';
+import { CRMPage } from '../modules/crm/pages/CRMPage';
+import { FichaPersonaPage } from '../modules/crm/pages/FichaPersonaPage';
 
 /**
  * Single source of truth for the admin section: both the router (App.tsx)
@@ -28,6 +30,8 @@ export interface AdminRouteConfig {
 
 export const ADMIN_ROUTES: AdminRouteConfig[] = [
   { path: 'inicio', label: 'Inicio', icon: Home, element: <InicioPage />, showInNav: true },
+  { path: 'crm', label: 'CRM', icon: IdCard, element: <CRMPage />, showInNav: true },
+  { path: 'crm/personas/:personaId', label: 'Ficha CRM', icon: IdCard, element: <FichaPersonaPage />, showInNav: false },
   { path: 'clientes', label: 'Clientes', icon: Users, element: <ClientesPage />, showInNav: true },
   { path: 'agenda', label: 'Agenda', icon: CalendarDays, element: <AgendaPage />, showInNav: true },
   { path: 'reservas', label: 'Reservas', icon: ClipboardList, element: <ReservasPage />, showInNav: true },

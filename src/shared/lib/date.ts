@@ -20,3 +20,15 @@ export const addDays = (d: Date, n: number): Date => {
   date.setDate(date.getDate() + n);
   return date;
 };
+
+/** Edad a partir de una fecha de nacimiento ISO — nunca se almacena, siempre se calcula. */
+export const calculateAge = (birthDateISO: string): number => {
+  const birth = new Date(birthDateISO);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+};
