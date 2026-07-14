@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import { FinanceProvider } from './context/FinanceContext';
+import { AgendaConfigProvider } from './context/AgendaConfigContext';
 import { CatalogProvider } from './modules/catalog/context/CatalogContext';
 import { MasterDataProvider } from './modules/masterdata/context/MasterDataContext';
 import { CRMProvider } from './modules/crm/context/CRMContext';
@@ -362,10 +363,12 @@ const App: React.FC = () => {
                     <AppProvider>
                         <FinanceProvider>
                             <CRMProvider>
-                                <HashRouter>
-                                    <Layout />
-                                </HashRouter>
-                                <ToastViewport />
+                                <AgendaConfigProvider>
+                                    <HashRouter>
+                                        <Layout />
+                                    </HashRouter>
+                                    <ToastViewport />
+                                </AgendaConfigProvider>
                             </CRMProvider>
                         </FinanceProvider>
                     </AppProvider>

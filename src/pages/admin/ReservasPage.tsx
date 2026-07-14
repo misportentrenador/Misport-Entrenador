@@ -1,94 +1,16 @@
 import React, { useState } from 'react';
 import { Calendar, CheckCircle2, Filter, Plus } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { useFinance, financeServiceNameForCatalogServiceId } from '../../context/FinanceContext';
-import { useCRM } from '../../modules/crm/context/CRMContext';
-import { useCatalog } from '../../modules/catalog/context/CatalogContext';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { Badge, BadgeTone } from '../../components/ui/Badge';
-import { Reservation } from '../../types';
-
-const STATUS_LABEL: Record<Reservation['status'], string> = {
-  CONFIRMED: 'ACTIVA',
-  CANCELLED: 'CANCELADA',
-  COMPLETED: 'COMPLETADA',
-};
-const STATUS_TONE: Record<Reservation['status'], BadgeTone> = {
-  CONFIRMED: 'success',
-  CANCELLED: 'danger',
-  COMPLETED: 'info',
-};
+import { Badge } from '../../components/ui/Badge';
+import { useCompleteReservation } from '../../hooks/useCompleteReservation';
+import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE } from '../../shared/lib/reservationLabels';
 
 export const ReservasPage: React.FC = () => {
-  const { reservations, centers, trainers, completeReservation } = useApp();
-  const { entries, addEntry } = useFinance();
-  const { bonosCliente } = useCRM();
-  const { bonos } = useCatalog();
+  const { reservations, centers, trainers } = useApp();
+  const { handleComplete, completingIds } = useCompleteReservation();
   const [filterCenter, setFilterCenter] = useState<string>('all');
   const [filterDate, setFilterDate] = useState<string>('');
-  const [completingIds, setCompletingIds] = useState<Set<string>>(new Set());
-
-  // Sprint 7: al completar una reserva, se genera automáticamente su entrada
-  // en Finanzas (mismo centro/entrenador/servicio/fecha/tarifa del Catálogo).
-  // sourceReservationId evita crear una segunda entrada si se repite la acción.
-  //
-  // Sprint 11: consumo automático de bonos — regla oficial documentada en
-  // BonoCliente (crm/types.ts). Completamente independiente del registro
-  // económico de arriba (decisión aprobada, opción 2): el FinanceEntry se
-  // genera siempre, tenga o no bono disponible, para no perder nunca el
-  // reporting de la sesión prestada. El bono es solo un contador de saldo.
-  const handleComplete = async (r: Reservation) => {
-    if (r.status !== 'CONFIRMED' || completingIds.has(r.id)) return;
-    setCompletingIds(prev => new Set(prev).add(r.id));
-
-    let bonoStatus: Reservation['bonoStatus'];
-    if (r.personaId) {
-      const compatibleBonos = bonosCliente.items
-        .filter(b => b.personaId === r.personaId && b.status === 'active' && b.sessionsRemaining > 0)
-        .filter(b => bonos.items.find(producto => producto.id === b.bonoId)?.serviceId === r.serviceId)
-        .sort((a, b) => {
-          if (a.expiryDate && b.expiryDate) return a.expiryDate.localeCompare(b.expiryDate);
-          if (a.expiryDate) return -1;
-          if (b.expiryDate) return 1;
-          return a.purchaseDate.localeCompare(b.purchaseDate);
-        });
-
-      const chosen = compatibleBonos[0];
-      if (chosen) {
-        const remaining = chosen.sessionsRemaining - 1;
-        await bonosCliente.update(chosen.id, { sessionsRemaining: remaining, status: remaining === 0 ? 'consumed' : 'active' });
-        bonoStatus = 'consumed';
-      } else {
-        const proceed = window.confirm('Esta persona no tiene saldo de bono suficiente para este servicio. La sesión se completará y quedará marcada como "Pendiente de regularizar". ¿Continuar?');
-        if (!proceed) {
-          setCompletingIds(prev => { const next = new Set(prev); next.delete(r.id); return next; });
-          return;
-        }
-        bonoStatus = 'pending_regularization';
-      }
-    }
-
-    completeReservation(r.id, bonoStatus);
-
-    const alreadyRecorded = entries.some(e => e.sourceReservationId === r.id);
-    const financeService = financeServiceNameForCatalogServiceId(r.serviceId);
-    if (!alreadyRecorded && financeService) {
-      const center = centers.find(c => c.id === r.centerId);
-      const trainer = trainers.find(t => t.id === r.trainerId);
-      addEntry({
-        date: r.date,
-        trainerName: trainer?.name ?? 'Grupal (sin asignar)',
-        centerName: center?.name ?? '',
-        service: financeService,
-        // Decisión de negocio (Sprint 7): usar siempre la tarifa oficial de
-        // Grupo del Catálogo, sin inferir la frecuencia semanal real.
-        groupDays: financeService === 'Entrenamiento grupal' ? 1 : undefined,
-        quantity: 1,
-        sourceReservationId: r.id,
-        personaId: r.personaId ?? undefined,
-      });
-    }
-  };
 
   const filteredReservations = reservations.filter(r => {
     const matchesCenter = filterCenter === 'all' || r.centerId === filterCenter;
@@ -167,7 +89,7 @@ export const ReservasPage: React.FC = () => {
                     <td className="px-6 py-4">{trainer?.name || '-'}</td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
+                        <Badge tone={RESERVATION_STATUS_TONE[r.status]}>{RESERVATION_STATUS_LABEL[r.status]}</Badge>
                         {r.bonoStatus === 'pending_regularization' && <Badge tone="danger">Pendiente de regularizar</Badge>}
                       </div>
                     </td>
