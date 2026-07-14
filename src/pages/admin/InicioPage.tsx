@@ -1,15 +1,22 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Calendar, MapPin, Users, Euro, TrendingUp, Clock } from 'lucide-react';
+import { Calendar, MapPin, Users, Euro, TrendingUp, Clock, IdCard, AlertTriangle, ArrowRight } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { useFinance } from '../../context/FinanceContext';
+import { useMasterData } from '../../modules/masterdata/context/MasterDataContext';
+import { useCRM } from '../../modules/crm/context/CRMContext';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
+import { Button } from '../../components/ui/Button';
 import { formatEURCompact } from '../../shared/lib/format';
 
 export const InicioPage: React.FC = () => {
   const { reservations, centers, trainers } = useApp();
   const { entries, computeTotals } = useFinance();
+  const { personas } = useMasterData();
+  const { incidencias } = useCRM();
+
+  const incidenciasAbiertas = incidencias.items.filter(i => i.estado === 'abierta').length;
 
   const finance = useMemo(() => entries.reduce((acc, entry) => {
     const t = computeTotals(entry);
@@ -23,13 +30,19 @@ export const InicioPage: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in">
-      <PageHeader title="Inicio" subtitle="Resumen general de MISPORT" />
+      <PageHeader
+        title="Inicio"
+        subtitle="Resumen general de MISPORT"
+        actions={<Link to="/admin/crm"><Button variant="ghost">Ir al CRM <ArrowRight size={14} /></Button></Link>}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard label="Reservas totales" value={reservations.length} icon={Calendar} tone="blue" />
         <StatCard label="Centros activos" value={centers.filter(c => c.isActive).length} icon={MapPin} tone="orange" />
         <StatCard label="Entrenadores" value={trainers.length} icon={Users} tone="green" />
         <StatCard label="Facturación base" value={formatEURCompact(finance.billingBase)} icon={Euro} tone="purple" />
+        <StatCard label="Personas en CRM" value={personas.items.length} icon={IdCard} tone="blue" />
+        <StatCard label="Incidencias abiertas" value={incidenciasAbiertas} icon={AlertTriangle} tone={incidenciasAbiertas > 0 ? 'orange' : 'neutral'} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
