@@ -1,18 +1,16 @@
-import { LucideIcon, CheckCircle2, XCircle, IdCard } from 'lucide-react';
+import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote } from 'lucide-react';
 import { AgendaSession } from './AgendaSession';
 
 /**
  * Registro declarativo de acciones rápidas de una sesión (Sprint 15) — una
  * tarjeta de sesión no tiene botones hardcodeados, renderiza las entradas
- * de esta lista cuya `isAvailable` sea true. Añadir una acción futura
- * (registrar pago, consumir bono, WhatsApp, incidencia, nota, seguimiento,
- * reprogramar, confirmar asistencia, nueva reserva) es añadir una entrada
- * aquí — no requiere tocar SessionCard, DayView ni WeekView.
+ * de esta lista cuya `isAvailable` sea true. Añadir una acción futura es
+ * añadir una entrada aquí — no requiere tocar SessionCard, DayView ni
+ * WeekView.
  *
  * Claves reservadas para Sprints futuros (no implementadas: dependen de
  * lógica de negocio o integraciones que todavía no existen):
- * 'registrar_pago' | 'consumir_bono' | 'whatsapp' | 'crear_incidencia' |
- * 'anadir_nota' | 'programar_seguimiento' | 'reprogramar' |
+ * 'consumir_bono' | 'whatsapp' | 'crear_incidencia' | 'reprogramar' |
  * 'confirmar_asistencia' | 'nueva_reserva'.
  */
 export interface SessionAction {
@@ -28,9 +26,11 @@ interface BuildSessionActionsArgs {
   onComplete: (session: AgendaSession) => void;
   onCancel: (session: AgendaSession) => void;
   onViewFicha: (session: AgendaSession) => void;
+  onRegistrarPago: (session: AgendaSession) => void;
+  onAnadirNota: (session: AgendaSession) => void;
 }
 
-export function buildSessionActions({ onComplete, onCancel, onViewFicha }: BuildSessionActionsArgs): SessionAction[] {
+export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota }: BuildSessionActionsArgs): SessionAction[] {
   return [
     {
       key: 'completar',
@@ -55,6 +55,22 @@ export function buildSessionActions({ onComplete, onCancel, onViewFicha }: Build
       variant: 'ghost',
       isAvailable: (s) => !!s.reservation.personaId,
       onSelect: onViewFicha,
+    },
+    {
+      key: 'registrar_pago',
+      label: 'Registrar pago',
+      icon: Wallet,
+      variant: 'ghost',
+      isAvailable: (s) => !!s.reservation.personaId,
+      onSelect: onRegistrarPago,
+    },
+    {
+      key: 'anadir_nota',
+      label: 'Añadir nota',
+      icon: StickyNote,
+      variant: 'ghost',
+      isAvailable: (s) => !!s.reservation.personaId,
+      onSelect: onAnadirNota,
     },
   ];
 }

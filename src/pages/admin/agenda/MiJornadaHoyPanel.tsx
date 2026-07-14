@@ -3,16 +3,17 @@ import { Sun, Calendar, AlertTriangle, Ticket, IdCard, Clock } from 'lucide-reac
 import { useApp } from '../../../context/AppContext';
 import { useCRM } from '../../../modules/crm/context/CRMContext';
 import { toISODate } from '../../../shared/lib/date';
+import { SeguimientosDeHoyList } from './SeguimientosDeHoyList';
 
 /**
- * "Mi jornada de hoy" (Sprint 15) — zona superior de la Agenda, pensada
- * para crecer hasta convertirse en el resumen diario completo del
- * Director General (próximo cliente, llamadas pendientes, próxima
- * reunión, prioridades del día...). Este Sprint solo puebla los
- * indicadores para los que ya existe un dato real en el sistema; el resto
- * de la visión (seguimiento de empresas/ayuntamientos, prioridades
- * calculadas) queda pendiente de los módulos que aún no existen — no se
- * simula ningún dato.
+ * "Mi jornada de hoy" (Sprint 15, ampliado Sprint 16) — zona superior de
+ * la Agenda, pensada para crecer hasta convertirse en el resumen diario
+ * completo del Director General (próximo cliente, llamadas pendientes,
+ * próxima reunión, prioridades del día...). Los seguimientos comerciales
+ * (Sprint 16) ya son accionables (marcar contactado / reprogramar) sin
+ * entrar a la ficha; el resto de la visión (seguimiento de empresas/
+ * ayuntamientos, prioridades calculadas) queda pendiente de los módulos
+ * que aún no existen — no se simula ningún dato.
  */
 export const MiJornadaHoyPanel: React.FC = () => {
   const { user, reservations } = useApp();
@@ -82,6 +83,8 @@ export const MiJornadaHoyPanel: React.FC = () => {
       {!proximaSesionHoy && sesionesHoy.length === 0 && (
         <p className="text-sm text-gray-600">No hay sesiones programadas para hoy.</p>
       )}
+
+      <SeguimientosDeHoyList />
     </div>
   );
 };

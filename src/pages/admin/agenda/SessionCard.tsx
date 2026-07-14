@@ -1,19 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Clock } from 'lucide-react';
 import { useApp } from '../../../context/AppContext';
 import { Badge } from '../../../components/ui/Badge';
 import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE } from '../../../shared/lib/reservationLabels';
 import { AgendaSession } from './AgendaSession';
 import { useSessionActions } from './useSessionActions';
+import { RegistrarPagoModal } from './RegistrarPagoModal';
+import { AnadirNotaModal } from './AnadirNotaModal';
 
 interface SessionCardProps {
   session: AgendaSession;
   compact?: boolean;
 }
 
+type ActiveModal = 'registrar_pago' | 'anadir_nota' | null;
+
 export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) => {
   const { centers, trainers } = useApp();
-  const { actions, completingIds } = useSessionActions();
+  const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+  const { actions, completingIds } = useSessionActions({
+    onOpenRegistrarPago: () => setActiveModal('registrar_pago'),
+    onOpenAnadirNota: () => setActiveModal('anadir_nota'),
+  });
   const r = session.reservation;
   const center = centers.find(c => c.id === r.centerId);
   const trainer = trainers.find(t => t.id === r.trainerId);
@@ -51,6 +59,9 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
           ))}
         </div>
       )}
+
+      <RegistrarPagoModal session={session} open={activeModal === 'registrar_pago'} onClose={() => setActiveModal(null)} />
+      <AnadirNotaModal session={session} open={activeModal === 'anadir_nota'} onClose={() => setActiveModal(null)} />
     </div>
   );
 };
