@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
-import { CalendarClock, AlertTriangle, MessageSquare, StickyNote, Activity, Plus } from 'lucide-react';
-import { useApp } from '../../../../context/AppContext';
+import React, { useState } from 'react';
+import { CalendarClock, Plus } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
+import { usePersonaTimeline } from '../../hooks/usePersonaTimeline';
 import { MensajeCanal, MensajeDireccion } from '../../types';
 import { Card } from '../../../../components/ui/Card';
 import { Input } from '../../../../components/ui/Input';
@@ -14,69 +14,24 @@ interface Props {
   personaId: string;
 }
 
-type TimelineItem = {
-  key: string;
-  date: string;
-  icon: React.ElementType;
-  label: string;
-  detail: string;
-};
-
 const emptyNotaForm = { contenido: '' };
 const emptyIncidenciaForm = { tipo: '', descripcion: '' };
 const emptyMensajeForm = { canal: 'whatsapp' as MensajeCanal, direccion: 'saliente' as MensajeDireccion, asunto: '', contenido: '' };
 
 /**
- * Historial — combinación en memoria de varias fuentes. Se formalizará
- * como el hook compartido usePersonaTimeline en el Sprint 11; aquí se
- * construye inline para no adelantar ese Sprint. Los pagos (FinanceEntry)
- * viven en la sección Económica (Sprint 10), no se repiten aquí.
- * Las tres altas (nota/incidencia/mensaje) viven aquí — es la única
+ * Historial — el timeline combinado ahora vive en usePersonaTimeline
+ * (Sprint 12), compartido con el buscador/filtros. Los pagos
+ * (FinanceEntry) viven en la sección Económica (Sprint 10), no se repiten
+ * aquí. Las tres altas (nota/incidencia/mensaje) viven aquí — es la única
  * pantalla que las crea, evitando duplicar el formulario en el dashboard.
  */
 export const HistorialSection: React.FC<Props> = ({ personaId }) => {
-  const { reservations, centers } = useApp();
-  const { incidencias, mensajes, notas, eventos } = useCRM();
+  const { incidencias, mensajes, notas } = useCRM();
+  const { items, loading } = usePersonaTimeline(personaId);
 
   const [notaForm, setNotaForm] = useState(emptyNotaForm);
   const [incidenciaForm, setIncidenciaForm] = useState(emptyIncidenciaForm);
   const [mensajeForm, setMensajeForm] = useState(emptyMensajeForm);
-
-  const loading = incidencias.loading || mensajes.loading || notas.loading || eventos.loading;
-
-  const items = useMemo<TimelineItem[]>(() => {
-    const list: TimelineItem[] = [];
-
-    reservations.filter(r => r.personaId === personaId).forEach(r => {
-      const center = centers.find(c => c.id === r.centerId);
-      const completedLabel = r.bonoStatus === 'pending_regularization' ? 'Sesión completada (pendiente de regularizar)' : 'Sesión completada';
-      list.push({
-        key: `res_${r.id}`,
-        date: r.date,
-        icon: CalendarClock,
-        label: r.status === 'COMPLETED' ? completedLabel : r.status === 'CANCELLED' ? 'Reserva cancelada' : 'Reserva confirmada',
-        detail: `${center?.name ?? '—'} · ${r.startTime}`,
-      });
-    });
-
-    incidencias.items.filter(i => i.personaId === personaId).forEach(i => {
-      list.push({ key: `inc_${i.id}`, date: i.fecha, icon: AlertTriangle, label: 'Incidencia', detail: i.descripcion });
-    });
-
-    mensajes.items.filter(m => m.personaId === personaId).forEach(m => {
-      list.push({ key: `msg_${m.id}`, date: m.fecha, icon: MessageSquare, label: `Mensaje (${m.canal})`, detail: m.asunto });
-    });
-
-    notas.items.filter(n => n.personaId === personaId).forEach(n => {
-      list.push({ key: `nota_${n.id}`, date: n.fecha, icon: StickyNote, label: 'Nota', detail: n.contenido });
-    });
-
-    eventos.items.filter(e => e.personaId === personaId).forEach(e => {
-      list.push({ key: `evt_${e.id}`, date: e.fecha, icon: Activity, label: e.tipo, detail: e.descripcion });
-    });
-
-    return list.sort((a, b) => b.date.localeCompare(a.date));
-  }, [reservations, centers, incidencias.items, mensajes.items, notas.items, eventos.items, personaId]);
 
   const handleAddNota = async (e: React.FormEvent) => {
     e.preventDefault();
