@@ -9,6 +9,10 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { StatCard } from '../../components/ui/StatCard';
 import { Button } from '../../components/ui/Button';
 import { formatEURCompact } from '../../shared/lib/format';
+import { BonosPorCaducarPanel } from './inicio/BonosPorCaducarPanel';
+import { PendientesRegularizarPanel } from './inicio/PendientesRegularizarPanel';
+import { EmbudoComercialPanel } from './inicio/EmbudoComercialPanel';
+import { ProximasAccionesPanel } from './inicio/ProximasAccionesPanel';
 
 export const InicioPage: React.FC = () => {
   const { reservations, centers, trainers } = useApp();
@@ -77,6 +81,13 @@ export const InicioPage: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <BonosPorCaducarPanel />
+        <PendientesRegularizarPanel />
+        <EmbudoComercialPanel />
+        <ProximasAccionesPanel />
       </div>
     </div>
   );
