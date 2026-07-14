@@ -18,7 +18,7 @@ interface AppContextType {
   clients: User[];
   addReservation: (reservationData: Omit<Reservation, 'id' | 'createdAt' | 'status' | 'userName' | 'userEmail' | 'personaId'>) => Promise<void>;
   cancelReservation: (id: string) => void;
-  completeReservation: (id: string) => void;
+  completeReservation: (id: string, bonoStatus?: Reservation['bonoStatus']) => void;
   getOccupancy: (centerId: string, serviceId: string, trainerId: string | null, date: string, time: string) => number;
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
@@ -259,9 +259,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
   // Terminal, one-way transition (Sprint 7): solo una reserva CONFIRMED puede
   // completarse; una ya CANCELLED o COMPLETED se ignora sin efecto.
-  const completeReservation = (id: string) => {
+  // bonoStatus (Sprint 11) es independiente del registro económico: se
+  // fija junto con la transición, pero nunca condiciona si se genera el
+  // FinanceEntry correspondiente (eso sigue siendo siempre, Sprint 7).
+  const completeReservation = (id: string, bonoStatus?: Reservation['bonoStatus']) => {
     setReservations(prev => {
-        const updated = prev.map(r => r.id === id && r.status === 'CONFIRMED' ? { ...r, status: 'COMPLETED' as const } : r);
+        const updated = prev.map(r => r.id === id && r.status === 'CONFIRMED' ? { ...r, status: 'COMPLETED' as const, bonoStatus } : r);
         localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(updated));
         return updated;
     });

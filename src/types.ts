@@ -53,6 +53,15 @@ export interface Reservation {
   endTime: string; // HH:mm
   status: ReservationStatus;
   createdAt: number;
+  /**
+   * Resultado del consumo automático de bonos al completar la sesión
+   * (Sprint 11) — independiente del registro económico (FinanceEntry),
+   * que se genera siempre. 'consumed': se descontó un bono compatible.
+   * 'pending_regularization': no había saldo suficiente, el entrenador
+   * fue avisado antes de completar la sesión. Ausente si el concepto no
+   * aplica (p. ej. personaId null).
+   */
+  bonoStatus?: 'consumed' | 'pending_regularization';
 }
 
 // Configuration for complex schedules

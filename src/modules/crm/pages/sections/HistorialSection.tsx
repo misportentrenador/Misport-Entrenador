@@ -49,11 +49,12 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
 
     reservations.filter(r => r.personaId === personaId).forEach(r => {
       const center = centers.find(c => c.id === r.centerId);
+      const completedLabel = r.bonoStatus === 'pending_regularization' ? 'Sesión completada (pendiente de regularizar)' : 'Sesión completada';
       list.push({
         key: `res_${r.id}`,
         date: r.date,
         icon: CalendarClock,
-        label: r.status === 'COMPLETED' ? 'Sesión completada' : r.status === 'CANCELLED' ? 'Reserva cancelada' : 'Reserva confirmada',
+        label: r.status === 'COMPLETED' ? completedLabel : r.status === 'CANCELLED' ? 'Reserva cancelada' : 'Reserva confirmada',
         detail: `${center?.name ?? '—'} · ${r.startTime}`,
       });
     });
