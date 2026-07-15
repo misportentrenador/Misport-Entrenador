@@ -31,9 +31,10 @@ const RequireAuth = ({ children }: { children?: React.ReactNode }) => {
 
 const RequireAdmin = ({ children }: { children?: React.ReactNode }) => {
     const { user } = useApp();
+    const location = useLocation();
 
     if (!user) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     if (!can(user.role, 'admin:access')) {
@@ -138,12 +139,18 @@ const ClientDashboard: React.FC = () => {
 // 2. LOGIN SCREEN
 const LoginScreen: React.FC = () => {
     const { login, user } = useApp();
+    const location = useLocation();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
     if (user) {
-        return <Navigate to={user.role === 'ADMIN' ? '/admin' : '/'} replace />;
+        // Vuelve a la ruta original (guardada por RequireAuth/RequireAdmin en
+        // location.state.from) cuando el login ocurre tras un redirect por
+        // sesión no restaurada todavía (recarga en una ruta profunda), en
+        // vez de mandar siempre a /admin o / y perder la ruta pedida.
+        const from = (location.state as { from?: { pathname: string; search: string; hash: string } } | null)?.from;
+        return <Navigate to={from ?? (user.role === 'ADMIN' ? '/admin' : '/')} replace />;
     }
 
     const handleSubmit = (e: React.FormEvent) => {
