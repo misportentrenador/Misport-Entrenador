@@ -1,13 +1,21 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName } from '../types';
+import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, DatosFiscalesEmpresa, Factura } from '../types';
 import { Rate } from '../modules/catalog/types';
 import { useCatalog } from '../modules/catalog/context/CatalogContext';
-import { DEFAULT_FINANCE_PARAMS } from '../constants';
+import { DEFAULT_FINANCE_PARAMS, DEFAULT_DATOS_FISCALES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
 
 const PARAMS_KEY = STORAGE_KEYS.financeParams;
 const ENTRIES_KEY = STORAGE_KEYS.financeEntries;
+const FACTURAS_KEY = STORAGE_KEYS.financeFacturas;
+const FISCAL_CONFIG_KEY = STORAGE_KEYS.fiscalConfig;
+
+/** Serie única correlativa, se reinicia cada año natural (decisión aprobada, Sprint 19). */
+export function nextInvoiceNumber(facturas: Factura[], year: number): string {
+  const countThisYear = facturas.filter(f => f.anio === year).length;
+  return `${year}-${String(countThisYear + 1).padStart(4, '0')}`;
+}
 
 /**
  * Puente Finanzas <-> Catálogo Maestro (Sprint 6): cada servicio de
@@ -82,6 +90,11 @@ interface FinanceContextType {
   addEntry: (data: Omit<FinanceEntry, 'id' | 'createdAt'>) => void;
   deleteEntry: (id: string) => void;
   computeTotals: (entry: FinanceEntry) => FinanceEntryTotals;
+  datosFiscales: DatosFiscalesEmpresa;
+  updateDatosFiscales: (datos: DatosFiscalesEmpresa) => void;
+  facturas: Factura[];
+  /** Emite la factura de una FinanceEntry ya registrada — numeración correlativa única. */
+  generarFactura: (entry: FinanceEntry) => Factura;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -90,6 +103,8 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const { rates } = useCatalog();
   const [params, setParams] = useState<FinanceParams>(DEFAULT_FINANCE_PARAMS);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
+  const [datosFiscales, setDatosFiscales] = useState<DatosFiscalesEmpresa>(DEFAULT_DATOS_FISCALES);
+  const [facturas, setFacturas] = useState<Factura[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -107,6 +122,20 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error('Failed to load finance entries', e);
     }
 
+    try {
+      const storedFiscal = localStorage.getItem(FISCAL_CONFIG_KEY);
+      if (storedFiscal) setDatosFiscales(JSON.parse(storedFiscal));
+    } catch (e) {
+      console.error('Failed to load fiscal config', e);
+    }
+
+    try {
+      const storedFacturas = localStorage.getItem(FACTURAS_KEY);
+      if (storedFacturas) setFacturas(JSON.parse(storedFacturas));
+    } catch (e) {
+      console.error('Failed to load facturas', e);
+    }
+
     setLoaded(true);
   }, []);
 
@@ -120,7 +149,18 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     localStorage.setItem(ENTRIES_KEY, JSON.stringify(entries));
   }, [entries, loaded]);
 
+  useEffect(() => {
+    if (!loaded) return;
+    localStorage.setItem(FISCAL_CONFIG_KEY, JSON.stringify(datosFiscales));
+  }, [datosFiscales, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    localStorage.setItem(FACTURAS_KEY, JSON.stringify(facturas));
+  }, [facturas, loaded]);
+
   const updateParams = (next: FinanceParams) => setParams(next);
+  const updateDatosFiscales = (next: DatosFiscalesEmpresa) => setDatosFiscales(next);
 
   const addEntry = (data: Omit<FinanceEntry, 'id' | 'createdAt'>) => {
     const newEntry: FinanceEntry = {
@@ -137,8 +177,33 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
 
   const computeTotals = (entry: FinanceEntry) => computeEntryTotals(entry, params, rates.items);
 
+  const generarFactura = (entry: FinanceEntry): Factura => {
+    if (!entry.personaId) {
+      throw new Error('No se puede facturar una entrada sin cliente vinculado.');
+    }
+    const totals = computeTotals(entry);
+    const year = new Date().getFullYear();
+    const factura: Factura = {
+      id: `fac_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      numero: nextInvoiceNumber(facturas, year),
+      anio: year,
+      fecha: new Date().toISOString().slice(0, 10),
+      personaId: entry.personaId,
+      financeEntryId: entry.id,
+      baseImponible: totals.billingBase,
+      igicAmount: totals.igicAmount,
+      total: totals.totalCharged,
+      createdAt: Date.now(),
+    };
+    setFacturas(prev => [...prev, factura]);
+    return factura;
+  };
+
   return (
-    <FinanceContext.Provider value={{ params, updateParams, entries, addEntry, deleteEntry, computeTotals }}>
+    <FinanceContext.Provider value={{
+      params, updateParams, entries, addEntry, deleteEntry, computeTotals,
+      datosFiscales, updateDatosFiscales, facturas, generarFactura,
+    }}>
       {children}
     </FinanceContext.Provider>
   );

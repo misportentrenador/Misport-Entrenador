@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Wallet, Plus, Save } from 'lucide-react';
+import { Wallet, Plus, Save, FileText, Download } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { useCatalog } from '../../../catalog/context/CatalogContext';
+import { useMasterData } from '../../../masterdata/context/MasterDataContext';
 import { useFinance } from '../../../../context/FinanceContext';
 import { useApp } from '../../../../context/AppContext';
 import { FINANCE_SERVICES } from '../../../../constants';
@@ -16,6 +17,7 @@ import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
 import { formatEUR } from '../../../../shared/lib/format';
 import { PagoFormFields } from '../../../../components/PagoFormFields';
+import { downloadInvoicePdf } from '../../../../shared/lib/invoicePdf';
 
 interface Props {
   personaId: string;
@@ -33,8 +35,10 @@ const emptyPagoForm = { date: new Date().toISOString().slice(0, 10), trainerName
 export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
   const { bonosCliente } = useCRM();
   const { bonos } = useCatalog();
-  const { entries, addEntry, computeTotals } = useFinance();
+  const { entries, addEntry, computeTotals, facturas, generarFactura, datosFiscales } = useFinance();
   const { trainers, centers } = useApp();
+  const { personas } = useMasterData();
+  const persona = personas.items.find(p => p.id === personaId);
 
   const misBonos = bonosCliente.items.filter(b => b.personaId === personaId);
   const misPagos = entries.filter(e => e.personaId === personaId).sort((a, b) => (b.date || '').localeCompare(a.date || ''));
@@ -77,6 +81,22 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
     setPagoForm(emptyPagoForm);
     setPagoSaved(true);
     setTimeout(() => setPagoSaved(false), 2000);
+  };
+
+  const datosFiscalesCompletos = !!datosFiscales.razonSocial && !!datosFiscales.nif && !!datosFiscales.direccion;
+
+  const handleGenerarFactura = async (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    if (!entry || !persona) return;
+    const factura = generarFactura(entry);
+    await downloadInvoicePdf(factura, entry, persona, datosFiscales);
+  };
+
+  const handleDescargarFactura = async (entryId: string) => {
+    const entry = entries.find(e => e.id === entryId);
+    const factura = facturas.find(f => f.financeEntryId === entryId);
+    if (!entry || !factura || !persona) return;
+    await downloadInvoicePdf(factura, entry, persona, datosFiscales);
   };
 
   if (bonosCliente.loading || bonos.loading) return <div className="p-12 flex justify-center"><Spinner /></div>;
@@ -127,22 +147,46 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Historial de pagos</h3>
           <span className="text-sm text-white font-bold">Total facturado: {formatEUR(totalFacturado)}</span>
         </div>
+        {!datosFiscalesCompletos && (
+          <p className="text-xs text-misportOrange mb-3">
+            Para generar facturas, completa antes los datos fiscales de la empresa en Finanzas.
+          </p>
+        )}
         {misPagos.length === 0 ? (
           <EmptyState message="Sin pagos registrados todavía." />
         ) : (
           <div className="overflow-x-auto mb-4">
             <table className="w-full text-sm text-left text-gray-400">
               <thead className="text-xs text-gray-500 uppercase bg-gray-900/50 border-b border-gray-800">
-                <tr><th className="px-4 py-2">Fecha</th><th className="px-4 py-2">Servicio</th><th className="px-4 py-2 text-right">Importe</th></tr>
+                <tr><th className="px-4 py-2">Fecha</th><th className="px-4 py-2">Servicio</th><th className="px-4 py-2 text-right">Importe</th><th className="px-4 py-2 text-right">Factura</th></tr>
               </thead>
               <tbody>
-                {misPagos.map(p => (
-                  <tr key={p.id} className="border-b border-gray-800">
-                    <td className="px-4 py-2 text-white">{p.date}</td>
-                    <td className="px-4 py-2">{p.service}{p.groupDays ? ` (${p.groupDays}d)` : ''}</td>
-                    <td className="px-4 py-2 text-right text-white">{formatEUR(computeTotals(p).billingBase)}</td>
-                  </tr>
-                ))}
+                {misPagos.map(p => {
+                  const factura = facturas.find(f => f.financeEntryId === p.id);
+                  return (
+                    <tr key={p.id} className="border-b border-gray-800">
+                      <td className="px-4 py-2 text-white">{p.date}</td>
+                      <td className="px-4 py-2">{p.service}{p.groupDays ? ` (${p.groupDays}d)` : ''}</td>
+                      <td className="px-4 py-2 text-right text-white">{formatEUR(computeTotals(p).billingBase)}</td>
+                      <td className="px-4 py-2 text-right">
+                        {factura ? (
+                          <button onClick={() => handleDescargarFactura(p.id)} className="flex items-center gap-1 text-xs font-bold text-misportBlue hover:text-blue-400 ml-auto">
+                            <Download size={12} /> {factura.numero}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleGenerarFactura(p.id)}
+                            disabled={!datosFiscalesCompletos || !persona?.docId}
+                            title={!persona?.docId ? 'El cliente no tiene DNI/NIF registrado' : undefined}
+                            className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-white ml-auto disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <FileText size={12} /> Generar factura
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

@@ -1,5 +1,5 @@
 
-import { Center, Trainer, TrainingType, User, ScheduleRule, FinanceParams, FinanceServiceName } from "./types";
+import { Center, Trainer, TrainingType, User, ScheduleRule, FinanceParams, FinanceServiceName, DatosFiscalesEmpresa } from "./types";
 
 // --- 1. CENTROS ---
 export const MOCK_CENTERS: Center[] = [
@@ -285,4 +285,12 @@ export const FINANCE_SERVICES: FinanceServiceName[] = [
 export const DEFAULT_FINANCE_PARAMS: FinanceParams = {
   igic: 0.07,
   profitTax: 0.2,
+};
+
+// Sin valores por defecto reales: son datos fiscales obligatorios que el
+// Director General debe rellenar antes de poder generar una factura.
+export const DEFAULT_DATOS_FISCALES: DatosFiscalesEmpresa = {
+  razonSocial: '',
+  nif: '',
+  direccion: '',
 };

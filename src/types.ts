@@ -139,3 +139,34 @@ export interface FinanceEntryTotals {
   netProfit: number;
   totalCharged: number;
 }
+
+/**
+ * Datos fiscales de MISPORT como emisor de sus propias facturas (Sprint 19).
+ * Se rellenan una vez desde Finanzas; sin ellos, "Generar factura" queda
+ * bloqueado — son un dato real obligatorio en cualquier factura, no un
+ * valor por defecto inventado.
+ */
+export interface DatosFiscalesEmpresa {
+  razonSocial: string;
+  nif: string;
+  direccion: string;
+}
+
+/**
+ * Factura (Sprint 19, fase 1) — emitida a partir de una única FinanceEntry
+ * ya registrada. Numeración correlativa única (serie AAAA-NNNN, se reinicia
+ * cada año natural), decisión de negocio aprobada. Generada y descargada
+ * en PDF desde el propio navegador, sin backend ni servicio externo.
+ */
+export interface Factura {
+  id: string;
+  numero: string; // "2026-0001"
+  anio: number;
+  fecha: string; // YYYY-MM-DD, fecha de emisión
+  personaId: string;
+  financeEntryId: string;
+  baseImponible: number;
+  igicAmount: number;
+  total: number;
+  createdAt: number;
+}
