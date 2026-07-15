@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CalendarClock, AlertTriangle, MessageSquare, StickyNote, Activity } from 'lucide-react';
 import { useApp } from '../../../context/AppContext';
 import { useCRM } from '../context/CRMContext';
+import { Reservation } from '../../../types';
 
 export interface PersonaTimelineItem {
   key: string;
@@ -9,6 +10,8 @@ export interface PersonaTimelineItem {
   icon: React.ElementType;
   label: string;
   detail: string;
+  /** Solo presente en entradas originadas por una reserva (Sprint 21) — permite ofrecer "Reprogramar" sin volver a buscar la reserva por id. */
+  reservation?: Reservation;
 }
 
 /**
@@ -36,6 +39,7 @@ export function usePersonaTimeline(personaId: string) {
         icon: CalendarClock,
         label: r.status === 'COMPLETED' ? completedLabel : r.status === 'CANCELLED' ? 'Reserva cancelada' : 'Reserva confirmada',
         detail: `${center?.name ?? '—'} · ${r.startTime}`,
+        reservation: r,
       });
     });
 

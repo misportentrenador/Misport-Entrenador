@@ -64,6 +64,26 @@ export interface Reservation {
   bonoStatus?: 'consumed' | 'pending_regularization';
 }
 
+/**
+ * Auditoría de reprogramaciones (Sprint 21) — un registro estructurado por
+ * cada cambio de fecha/hora de una reserva, independiente de que tenga
+ * Persona vinculada, para poder consultarlo después (no depende de parsear
+ * el texto del historial del CRM, que solo cubre reservas con personaId).
+ */
+export interface ReservationRescheduleLog {
+  id: string;
+  reservationId: string;
+  fechaAnterior: string;
+  horaInicioAnterior: string;
+  horaFinAnterior: string;
+  fechaNueva: string;
+  horaInicioNueva: string;
+  horaFinNueva: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  createdAt: number;
+}
+
 // Configuration for complex schedules
 export interface ScheduleRule {
   centerId: string;

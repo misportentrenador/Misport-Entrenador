@@ -1,4 +1,4 @@
-import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote, AlertTriangle, CalendarPlus } from 'lucide-react';
+import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote, AlertTriangle, CalendarPlus, CalendarClock } from 'lucide-react';
 import { AgendaSession } from './AgendaSession';
 
 /**
@@ -11,7 +11,7 @@ import { AgendaSession } from './AgendaSession';
  *
  * Claves reservadas para Sprints futuros (no implementadas: dependen de
  * lógica de negocio o integraciones que todavía no existen):
- * 'consumir_bono' | 'whatsapp' | 'reprogramar' | 'confirmar_asistencia'.
+ * 'consumir_bono' | 'whatsapp' | 'confirmar_asistencia'.
  */
 export interface SessionAction {
   key: string;
@@ -30,9 +30,10 @@ interface BuildSessionActionsArgs {
   onAnadirNota: (session: AgendaSession) => void;
   onCrearIncidencia: (session: AgendaSession) => void;
   onNuevaReserva: (session: AgendaSession) => void;
+  onReprogramar: (session: AgendaSession) => void;
 }
 
-export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota, onCrearIncidencia, onNuevaReserva }: BuildSessionActionsArgs): SessionAction[] {
+export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota, onCrearIncidencia, onNuevaReserva, onReprogramar }: BuildSessionActionsArgs): SessionAction[] {
   return [
     {
       key: 'completar',
@@ -89,6 +90,14 @@ export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegis
       variant: 'ghost',
       isAvailable: (s) => s.origin === 'misport' && !!s.reservation?.personaId,
       onSelect: onNuevaReserva,
+    },
+    {
+      key: 'reprogramar',
+      label: 'Reprogramar',
+      icon: CalendarClock,
+      variant: 'ghost',
+      isAvailable: (s) => s.origin === 'misport' && s.reservation?.status === 'CONFIRMED',
+      onSelect: onReprogramar,
     },
   ];
 }

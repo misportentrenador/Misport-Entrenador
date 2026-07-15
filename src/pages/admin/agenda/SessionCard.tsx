@@ -9,13 +9,14 @@ import { RegistrarPagoModal } from './RegistrarPagoModal';
 import { AnadirNotaModal } from './AnadirNotaModal';
 import { CrearIncidenciaModal } from './CrearIncidenciaModal';
 import { NuevaReservaModal } from './NuevaReservaModal';
+import { ReprogramarModal } from './ReprogramarModal';
 
 interface SessionCardProps {
   session: AgendaSession;
   compact?: boolean;
 }
 
-type ActiveModal = 'registrar_pago' | 'anadir_nota' | 'crear_incidencia' | 'nueva_reserva' | null;
+type ActiveModal = 'registrar_pago' | 'anadir_nota' | 'crear_incidencia' | 'nueva_reserva' | 'reprogramar' | null;
 
 const EXTERNAL_ORIGIN_LABEL: Record<string, string> = {
   google_calendar: 'Google Calendar',
@@ -32,6 +33,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
     onOpenAnadirNota: () => setActiveModal('anadir_nota'),
     onOpenCrearIncidencia: () => setActiveModal('crear_incidencia'),
     onOpenNuevaReserva: () => setActiveModal('nueva_reserva'),
+    onOpenReprogramar: () => setActiveModal('reprogramar'),
   });
 
   const r = session.reservation;
@@ -100,6 +102,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
       <AnadirNotaModal session={session} open={activeModal === 'anadir_nota'} onClose={() => setActiveModal(null)} />
       <CrearIncidenciaModal session={session} open={activeModal === 'crear_incidencia'} onClose={() => setActiveModal(null)} />
       <NuevaReservaModal session={session} open={activeModal === 'nueva_reserva'} onClose={() => setActiveModal(null)} />
+      <ReprogramarModal reservation={r} open={activeModal === 'reprogramar'} onClose={() => setActiveModal(null)} />
     </div>
   );
 };

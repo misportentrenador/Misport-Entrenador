@@ -40,7 +40,7 @@ Módulos del ERP, con su estado actual:
 | Módulo | Estado |
 |---|---|
 | CRM | Construido (Sprints 8-12) |
-| Agenda | Construido (Sprints 15-18) |
+| Agenda | Construido (Sprints 15-18, 21) |
 | Reservas | Construido (Sprints 5, 7, 11) |
 | Bonos | Construido (Sprint 11, CRM) |
 | Finanzas | Construido, parcial (Sprints 6-7) |
@@ -59,9 +59,9 @@ Módulos del ERP, con su estado actual:
 
 Cada módulo futuro se diseña cuando le corresponda por prioridad, verificando siempre que encaja en la arquitectura ya existente sin necesitar romperla.
 
-### Madurez estimada del sistema (2026-07-15): ~37%
+### Madurez estimada del sistema (2026-07-15, tras el Sprint 21): ~38%
 
-Estimación cualitativa, no una métrica exacta: media ponderada del grado de completitud de cada uno de los 17 módulos del ERP (CRM/Agenda/Reservas ~90%, Catálogo ~90%, Bonos ~80%, Finanzas ~60%, Cuadros de mando ~50%, Facturación ~40%, Tesorería ~25%, Integraciones externas ~20%, IA ~5%, y Proyectos institucionales/Corporate Wellness/Trail Running/RRHH/Documentación/Automatizaciones en 0%). Se recalculará al cierre de cada Sprint futuro con el mismo criterio, para que la cifra sea comparable entre informes.
+Estimación cualitativa, no una métrica exacta: media ponderada del grado de completitud de cada uno de los 17 módulos del ERP (CRM ~90%, Agenda ~92% —sube 2 puntos tras el Sprint 21: de sus 8 acciones rápidas del registro `sessionActions` solo quedan 2 sin implementar (`confirmar_asistencia`, `consumir_bono` manual)—, Reservas ~90%, Catálogo ~90%, Bonos ~80%, Finanzas ~60%, Cuadros de mando ~50%, Facturación ~40%, Tesorería ~25%, Integraciones externas ~20%, IA ~5%, y Proyectos institucionales/Corporate Wellness/Trail Running/RRHH/Documentación/Automatizaciones en 0%). Se recalculará al cierre de cada Sprint futuro con el mismo criterio, para que la cifra sea comparable entre informes.
 
 ---
 
@@ -76,7 +76,7 @@ Estimación cualitativa, no una métrica exacta: media ponderada del grado de co
 | Finanzas | Estable, conectado al Catálogo | Sprint 6, 7 |
 | CRM (ficha única, buscador, filtros) | Estable — Release 0.3 cerrada | Sprint 8-12 |
 | Dashboard (Inicio) | Estable, con alertas operativas/comerciales | Sprint 13-14 |
-| Agenda Ejecutiva | Estable — centro operativo diario, 7 acciones rápidas, integración de calendarios | Sprint 15-18 |
+| Agenda Ejecutiva | Estable — centro operativo diario, 8 acciones rápidas (incluye reprogramar reserva), integración de calendarios, evento de dominio `ReservationRescheduled` listo para futuras sincronizaciones | Sprint 15-18, 21 |
 | Rendimiento/infraestructura técnica | Reforzada (bundle -92%, fix login, a11y) | Sesión de hardening 2026-07-15 |
 | Integraciones externas reales | Arquitectura lista; Google Calendar en modo lectura (credenciales de prueba) | Sprint 18 |
 | Facturación | Fase 1 — factura en PDF, numeración correlativa única | Sprint 19 |
@@ -87,13 +87,13 @@ Estimación cualitativa, no una métrica exacta: media ponderada del grado de co
 
 ## Sprint actual
 
-Ninguno abierto. El **Sprint 20** (Cobros/Cuentas por cobrar — estados de Factura Borrador/Emitida/Cobrada/Anulada, "Marcar como cobrada", filtro "Con deuda" del CRM, panel "Cobros pendientes" del Dashboard) está implementado y probado, con la arquitectura de `CobroFactura` ya preparada para cobros parciales, formas de pago, facturas rectificativas, facturación electrónica e integración bancaria futuras.
+Ninguno abierto. El **Sprint 21** (Reprogramar reserva desde la Agenda) está implementado y probado: valida disponibilidad y capacidad del nuevo horario (reutilizando `computeTimeSlots` y `getOccupancy`, sin una segunda fuente de disponibilidad), modifica la misma reserva (mismo id, mismo bono/pagos/incidencias/notas ya vinculados, sin cancelar ni crear una nueva), registra un log de auditoría estructurado (`ReservationRescheduleLog`, con horario anterior y nuevo, usuario y fecha/hora del cambio) y emite un evento de dominio interno (`ReservationRescheduled`, `src/core/events/domainEvents.ts`) para que futuras integraciones (Booksy, Google Calendar) puedan escuchar sin modificar esta lógica. Una única implementación (`ReprogramarModal.tsx`) reutilizable desde la vista diaria y semanal de la Agenda y desde el Historial de la Ficha del cliente.
 
 ---
 
 ## Backlog general (no priorizado por Sprint todavía)
 
-- Acciones rápidas de Agenda pendientes: `consumir_bono` (manual), `reprogramar`, `confirmar_asistencia`. (`crear_incidencia` completada en el Sprint 17; `nueva_reserva` completada en el Sprint 18.)
+- Acciones rápidas de Agenda pendientes: `consumir_bono` (manual), `confirmar_asistencia`. (`crear_incidencia` completada en el Sprint 17; `nueva_reserva` completada en el Sprint 18; `reprogramar` completada en el Sprint 21.)
 - Conexión real de Google Calendar (arquitectura, adaptador y modo lectura ya implementados y probados con credenciales de prueba en el Sprint 18) — **bloqueada solo por la creación de credenciales reales en Google Cloud por parte del Director General**, ver `Docs definitivos/2026-07-15-integracion-google-calendar.md`.
 - Sincronización bidireccional de Google Calendar (crear/editar eventos desde MISPORT) — decisión de negocio explícitamente pendiente, no técnica.
 - Integración WhatsApp (comunicación) — bloqueada hasta decisión de negocio (proveedor, coste).
@@ -118,27 +118,27 @@ Ninguno abierto. El **Sprint 20** (Cobros/Cuentas por cobrar — estados de Fact
 - Facturación (fase 1, Sprint 19) y Cobros (fase 1, Sprint 20): completadas.
 - Futuras fases de Tesorería (cobros parciales, formas de pago, rectificativas, facturación electrónica, integración bancaria): decisión de negocio pendiente para cada una cuando corresponda, sobre una arquitectura ya preparada.
 - `confirmar_asistencia` depende de decidir si se amplía el ciclo de vida de `ReservationStatus`.
-- `reprogramar` depende de decidir si valida disponibilidad/capacidad en el nuevo horario.
+- `reprogramar`: completada en el Sprint 21 (valida disponibilidad/capacidad, conserva historial y trazabilidad, auditoría con horario anterior/nuevo, evento de dominio `ReservationRescheduled`).
 
 ---
 
 ## Próximos 10 Sprints previstos
 
-Reordenados el 2026-07-15 tras el cierre del Sprint 20, según el nuevo orden de prioridad (1. completar flujos internos, 2. consolidar Agenda/CRM/Finanzas/Facturación, 3. finalizar acciones rápidas pendientes, 4. optimizar la experiencia diaria, 5. integraciones reales — deliberadamente en espera hasta consolidar el núcleo).
+Reordenados el 2026-07-15 tras el cierre del Sprint 21, según el orden de prioridad vigente (1. completar flujos internos, 2. consolidar Agenda/CRM/Finanzas/Facturación, 3. finalizar acciones rápidas pendientes, 4. optimizar la experiencia diaria, 5. integraciones reales — deliberadamente en espera hasta consolidar el núcleo).
 
 | # | Sprint | Prioridad que satisface | Bloqueo |
 |---|---|---|---|
-| 21 | Finalizar las acciones rápidas pendientes de la Agenda: `reprogramar`, `confirmar_asistencia`, `consumir_bono` manual | 3 | Cada una requiere una decisión de negocio puntual (ver Backlog) — se presentarán las 3 opciones para que decidas cuál abordar primero |
-| 22 | Tesorería fase 2: cobros parciales + formas de pago (efectivo/transferencia/tarjeta) | 1 y 2 (consolidar Facturación) | Requiere confirmar si el importe pendiente puede quedar parcialmente cobrado sin cambiar el estado de la factura |
-| 23 | Consolidación de Finanzas: unificar el "Registro" general (`FinancePanel`) con la vista por cliente, evitar duplicidad de flujos de alta de pagos | 2 | Ninguno — revisión técnica de un flujo ya construido |
-| 24 | Framework de pruebas automatizado versionado + auditoría de accesibilidad ampliada | Ciclo de mantenimiento del 20% técnico, refuerza la consolidación del núcleo | Requiere tu decisión sobre herramienta de pruebas |
-| 25 | Eliminación de `Persona.notes` deprecado + consolidación final de notas en CRM | Deuda de migración documentada desde el Sprint 8 | Ninguno |
-| 26 | **(en espera, arquitectura ya lista)** Conexión real de Google Calendar (activar credenciales) | 5 | Pospuesto por decisión estratégica hasta consolidar el núcleo — sin bloqueo técnico cuando se retome |
-| 27 | **(en espera)** Segunda integración de calendario (Outlook o Apple Calendar) | 5 | Pospuesto — arquitectura (`CalendarSourceAdapter`) lista |
-| 28 | **(en espera)** Integración WhatsApp | 5 | Pospuesto — además bloqueado por decisión de proveedor y coste |
-| 29 | **(en espera)** Módulo de Proyectos institucionales (Ayuntamientos y similares) | 5 | Pospuesto — además bloqueado por definir el modelo de negocio |
+| 22 | Terminar las acciones rápidas pendientes de la Agenda: `confirmar_asistencia`, `consumir_bono` manual | 3 | Cada una requiere una decisión de negocio puntual (ver Backlog) — se presentarán las 2 opciones para que decidas cuál abordar primero |
+| 23 | Tesorería fase 2: cobros parciales + formas de pago (efectivo/transferencia/tarjeta) | 1 y 2 (consolidar Facturación) | Requiere confirmar si el importe pendiente puede quedar parcialmente cobrado sin cambiar el estado de la factura |
+| 24 | Consolidación de Finanzas: unificar el "Registro" general (`FinancePanel`) con la vista por cliente, evitar duplicidad de flujos de alta de pagos | 2 | Ninguno — revisión técnica de un flujo ya construido |
+| 25 | Framework de pruebas automatizado versionado + auditoría de accesibilidad ampliada | Ciclo de mantenimiento del 20% técnico, refuerza la consolidación del núcleo | Requiere tu decisión sobre herramienta de pruebas |
+| 26 | Eliminación de `Persona.notes` deprecado + consolidación final de notas en CRM | Deuda de migración documentada desde el Sprint 8 | Ninguno |
+| 27 | **(en espera, arquitectura ya lista)** Conexión real de Google Calendar (activar credenciales) | 5 | Pospuesto por decisión estratégica hasta consolidar el núcleo — sin bloqueo técnico cuando se retome |
+| 28 | **(en espera)** Segunda integración de calendario (Outlook o Apple Calendar) | 5 | Pospuesto — arquitectura (`CalendarSourceAdapter`) lista |
+| 29 | **(en espera)** Integración WhatsApp | 5 | Pospuesto — además bloqueado por decisión de proveedor y coste |
+| 30 | **(en espera)** Módulo de Proyectos institucionales (Ayuntamientos y similares) | 5 | Pospuesto — además bloqueado por definir el modelo de negocio |
 
-**Recomendación de secuencia**: Sprint 21 (finalizar las acciones rápidas pendientes) — es el primer paso de "consolidar el núcleo" y no tiene bloqueo técnico, solo 3 decisiones de negocio puntuales a confirmar contigo.
+**Recomendación de secuencia**: Sprint 22 (terminar las acciones rápidas pendientes de la Agenda) — cierra por completo el registro `sessionActions`, es continuación directa del Sprint 21 y no tiene bloqueo técnico, solo 2 decisiones de negocio puntuales a confirmar contigo (reglas de `confirmar_asistencia` y de `consumir_bono` manual).
 
 Este orden se revisará automáticamente al cierre de cada Sprint, por si el estado del proyecto cambia la prioridad.
 
@@ -153,3 +153,4 @@ Este orden se revisará automáticamente al cierre de cada Sprint, por si el est
 - **2026-07-15**: cerrado el Sprint 19 — Facturación fase 1 (entidad `Factura`, numeración correlativa única `AAAA-NNNN` con serie única elegida por el Director General, datos fiscales de la empresa, generación de PDF en el navegador con `jspdf` cargado bajo demanda). Se propone el Sprint 20 (Cobros/Cuentas por cobrar) como siguiente.
 - **2026-07-15**: cerrado el Sprint 20 — Cobros/Cuentas por cobrar fase 1 (estados de Factura Borrador/Emitida/Cobrada/Anulada, "Marcar como cobrada" con fecha y hora automáticas, filtro "Con deuda" reactivado en el CRM, panel "Cobros pendientes" en el Dashboard con acceso directo). Arquitectura (`CobroFactura`) preparada para cobros parciales, formas de pago, facturas rectificativas, facturación electrónica e integración bancaria futuras, sin implementarlas todavía. Reformulada la visión a largo plazo explícitamente como un **ERP completo** (CRM, Agenda, Facturación, Tesorería, Proyectos institucionales, RRHH, Documentación, Automatizaciones, IA, todos sobre la misma base de datos y arquitectura), por instrucción directa del Director General.
 - **2026-07-15**: nuevo orden de prioridad tras el Sprint 20 — consolidar el núcleo (flujos internos, Agenda/CRM/Finanzas/Facturación, acciones rápidas pendientes, experiencia diaria) antes de retomar integraciones externas reales, que quedan en espera con su arquitectura ya preparada. Añadida la estimación de madurez del sistema (~37%) y el requisito de incluirla en cada informe de cierre de Sprint futuro. Se propone el Sprint 21 (finalizar las acciones rápidas pendientes) como siguiente.
+- **2026-07-15**: cerrado el Sprint 21 — Reprogramar reserva desde la Agenda: valida disponibilidad y capacidad del nuevo horario (reutilizando `computeTimeSlots`, extraído del Booking Wizard, y `getOccupancy`), modifica la misma reserva sin cancelarla ni crear una nueva (conserva bono/pagos/incidencias/notas), registra auditoría estructurada con horario anterior y nuevo (`ReservationRescheduleLog`) y emite un evento de dominio interno (`ReservationRescheduled`, `src/core/events/domainEvents.ts`) al que el propio CRM ya se suscribe (para alimentar el Historial de la Ficha) y al que las futuras integraciones de Booksy/Google Calendar podrán suscribirse sin tocar esta lógica. Una única implementación (`ReprogramarModal.tsx`) utilizable desde la vista diaria y semanal de la Agenda y desde la Ficha del cliente. Madurez del sistema: ~38%. Se propone el Sprint 22 (terminar `confirmar_asistencia` y `consumir_bono` manual) como siguiente.

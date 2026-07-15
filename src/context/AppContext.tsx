@@ -1,12 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Reservation, ScheduleRule } from '../types';
+import { User, Reservation, ScheduleRule, ReservationRescheduleLog } from '../types';
 import { Center, Trainer, Service } from '../modules/catalog/types';
 import { MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
 import { createEntityId } from '../core/data/entityId';
 import { personasRepo } from '../modules/masterdata/data/repositories';
 import { useCatalog } from '../modules/catalog/context/CatalogContext';
+import { domainEventBus } from '../core/events/domainEvents';
 
 interface AppContextType {
   user: User | null;
@@ -20,6 +21,14 @@ interface AppContextType {
   cancelReservation: (id: string) => void;
   completeReservation: (id: string, bonoStatus?: Reservation['bonoStatus']) => void;
   getOccupancy: (centerId: string, serviceId: string, trainerId: string | null, date: string, time: string) => number;
+  /**
+   * Cambia la fecha/hora de una reserva CONFIRMED sin cancelarla ni crear
+   * una nueva (Sprint 21) — mismo id, mismo bono/pagos/incidencias/notas ya
+   * vinculados. Valida disponibilidad del nuevo horario antes de aplicar el
+   * cambio.
+   */
+  reprogramarReserva: (id: string, nuevaFecha: string, nuevoInicio: string, nuevoFin: string) => { success: boolean; message?: string };
+  reservationReschedules: ReservationRescheduleLog[];
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -44,6 +53,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   
   // Dynamic data
   const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservationReschedules, setReservationReschedules] = useState<ReservationRescheduleLog[]>([]);
   const [clients, setClients] = useState<User[]>([]);
 
   // Reads the registered clients from the "DB" (passwords stripped) so the
@@ -85,6 +95,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
 
     // 3. Load registered clients
     loadClients();
+
+    // 4. Load reprogramaciones audit log (Sprint 21)
+    const storedReschedules = localStorage.getItem(STORAGE_KEYS.reservationReschedules);
+    if (storedReschedules) {
+        try {
+            setReservationReschedules(JSON.parse(storedReschedules));
+        } catch (e) {
+            console.error("Failed to load reservation reschedules, initializing empty.");
+            setReservationReschedules([]);
+        }
+    }
   }, []);
 
   // Persist reservations whenever they change
@@ -93,6 +114,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(reservations));
     }
   }, [reservations]);
+
+  useEffect(() => {
+    if (reservationReschedules.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.reservationReschedules, JSON.stringify(reservationReschedules));
+    }
+  }, [reservationReschedules]);
 
   // --- AUTH ACTIONS ---
 
@@ -293,6 +320,105 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       return relevantReservations.length;
   };
 
+  // Cambia fecha/hora de una reserva CONFIRMED sin cancelarla ni crear una
+  // nueva (Sprint 21, regla de negocio): valida disponibilidad del nuevo
+  // horario (misma lógica de ocupación que el Booking Wizard), conserva el
+  // mismo id/bono/pagos/incidencias/notas ya vinculados a la reserva, deja
+  // un registro de auditoría con el horario anterior y el nuevo, y emite un
+  // único evento de dominio para que futuras integraciones (Booksy, Google
+  // Calendar) puedan escuchar sin tocar esta función.
+  const reprogramarReserva = (
+    id: string,
+    nuevaFecha: string,
+    nuevoInicio: string,
+    nuevoFin: string
+  ): { success: boolean; message?: string } => {
+    const reservation = reservations.find(r => r.id === id);
+    if (!reservation) {
+        return { success: false, message: 'La reserva no existe.' };
+    }
+    if (reservation.status !== 'CONFIRMED') {
+        return { success: false, message: 'Solo se pueden reprogramar reservas confirmadas.' };
+    }
+
+    const sinCambios = reservation.date === nuevaFecha
+        && reservation.startTime === nuevoInicio
+        && reservation.endTime === nuevoFin;
+    if (sinCambios) {
+        return { success: false, message: 'La nueva fecha y hora coinciden con las actuales.' };
+    }
+
+    // Capacidad del nuevo horario: misma regla que al crear una reserva
+    // (getOccupancy ya excluye la propia reserva porque cuenta por
+    // centro+fecha+hora y esta reserva todavía tiene su horario anterior).
+    const service = trainingTypes.find(s => s.id === reservation.serviceId);
+    const capacity = service?.capacity ?? 1;
+    const currentOccupancy = getOccupancy(
+        reservation.centerId,
+        reservation.serviceId,
+        reservation.trainerId ?? null,
+        nuevaFecha,
+        nuevoInicio
+    );
+    if (currentOccupancy >= capacity) {
+        return { success: false, message: 'No hay disponibilidad en el horario seleccionado.' };
+    }
+
+    const previous = {
+        date: reservation.date,
+        startTime: reservation.startTime,
+        endTime: reservation.endTime,
+    };
+    const next = {
+        date: nuevaFecha,
+        startTime: nuevoInicio,
+        endTime: nuevoFin,
+    };
+
+    setReservations(prev => {
+        const updated = prev.map(r => r.id === id
+            ? { ...r, date: nuevaFecha, startTime: nuevoInicio, endTime: nuevoFin }
+            : r);
+        localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(updated));
+        return updated;
+    });
+
+    const log: ReservationRescheduleLog = {
+        id: createEntityId('resch'),
+        reservationId: id,
+        fechaAnterior: previous.date,
+        horaInicioAnterior: previous.startTime,
+        horaFinAnterior: previous.endTime,
+        fechaNueva: next.date,
+        horaInicioNueva: next.startTime,
+        horaFinNueva: next.endTime,
+        usuarioId: user?.id ?? '',
+        usuarioNombre: user?.name ?? '',
+        createdAt: Date.now(),
+    };
+    setReservationReschedules(prev => [...prev, log]);
+
+    // El timeline del CRM (Historial de la Ficha) se alimenta escuchando el
+    // evento de dominio emitido abajo (ver CRMContext) — AppProvider está
+    // por encima de CRMProvider en el árbol y no puede llamar a su hook
+    // useCRM(), así que esta función no escribe en el repositorio de
+    // PersonaEvento directamente; solo emite el evento.
+    domainEventBus.emit({
+        type: 'ReservationRescheduled',
+        reservationId: id,
+        personaId: reservation.personaId,
+        centerId: reservation.centerId,
+        serviceId: reservation.serviceId,
+        trainerId: reservation.trainerId,
+        previous,
+        next,
+        changedBy: { userId: user?.id ?? '', userName: user?.name ?? '' },
+        occurredAt: new Date().toISOString(),
+    });
+
+    return { success: true };
+  };
+
   const isAdmin = user?.role === 'ADMIN';
 
   return (
@@ -308,6 +434,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       cancelReservation,
       completeReservation,
       getOccupancy,
+      reprogramarReserva,
+      reservationReschedules,
       isAdmin,
       login,
       register,

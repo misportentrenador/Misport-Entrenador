@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { useMasterData } from '../modules/masterdata/context/MasterDataContext';
 import { BookingState } from '../types';
 import { generateFitnessTip } from '../services/geminiService';
+import { computeTimeSlots } from '../shared/lib/scheduling';
 import {
   MapPin,
   Dumbbell,
@@ -113,46 +114,7 @@ export const BookingWizard: React.FC<BookingWizardProps> = ({ onBehalfOfPersonaI
   // Step 4: Generate Time Slots based on SCHEDULE RULES
   const timeSlots = useMemo(() => {
     if (!selectedType || !state.selectedDate || !state.centerId) return [];
-
-    const date = new Date(state.selectedDate);
-    const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon...
-
-    const applicableRules = scheduleRules.filter(rule => {
-      const matchCenter = rule.centerId === state.centerId;
-      const matchType = rule.serviceId === state.serviceId;
-      const matchTrainer = state.trainerId
-        ? rule.trainerId === state.trainerId
-        : !rule.trainerId;
-
-      const matchDay = rule.daysOfWeek.includes(dayOfWeek);
-      return matchCenter && matchType && matchTrainer && matchDay;
-    });
-
-    const slots: string[] = [];
-    const duration = selectedType.durationMinutes;
-
-    applicableRules.forEach(rule => {
-      rule.ranges.forEach(range => {
-        const [startH, startM] = range.start.split(':').map(Number);
-        const [endH, endM] = range.end.split(':').map(Number);
-        
-        let currentMin = startH * 60 + startM;
-        const endMin = endH * 60 + endM;
-
-        while (currentMin + duration <= endMin) {
-          const h = Math.floor(currentMin / 60);
-          const m = currentMin % 60;
-          const timeString = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-          
-          if (!slots.includes(timeString)) {
-             slots.push(timeString);
-          }
-          currentMin += duration;
-        }
-      });
-    });
-
-    return slots.sort();
+    return computeTimeSlots(scheduleRules, state.centerId, state.serviceId, state.trainerId || null, state.selectedDate, selectedType.durationMinutes);
   }, [state.selectedDate, state.centerId, state.serviceId, state.trainerId, selectedType, scheduleRules]);
 
   useEffect(() => {

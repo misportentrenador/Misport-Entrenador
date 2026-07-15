@@ -3,12 +3,14 @@ import { CalendarClock, Plus } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { usePersonaTimeline } from '../../hooks/usePersonaTimeline';
 import { MensajeCanal, MensajeDireccion } from '../../types';
+import { Reservation } from '../../../../types';
 import { Card } from '../../../../components/ui/Card';
 import { Input } from '../../../../components/ui/Input';
 import { Select } from '../../../../components/ui/Select';
 import { Button } from '../../../../components/ui/Button';
 import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
+import { ReprogramarModal } from '../../../../pages/admin/agenda/ReprogramarModal';
 
 interface Props {
   personaId: string;
@@ -32,6 +34,7 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
   const [notaForm, setNotaForm] = useState(emptyNotaForm);
   const [incidenciaForm, setIncidenciaForm] = useState(emptyIncidenciaForm);
   const [mensajeForm, setMensajeForm] = useState(emptyMensajeForm);
+  const [reprogramando, setReprogramando] = useState<Reservation | null>(null);
 
   const handleAddNota = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,15 +101,24 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
             {items.map(item => (
               <li key={item.key} className="flex items-start gap-3 p-3 bg-gray-900/40 border border-gray-800 rounded-lg">
                 <item.icon size={16} className="text-misportBlue mt-0.5 shrink-0" />
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                   <p className="text-white text-sm font-medium">{item.label} <span className="text-gray-500 font-normal">· {item.date.slice(0, 10)}</span></p>
                   <p className="text-gray-400 text-sm truncate">{item.detail}</p>
                 </div>
+                {item.reservation?.status === 'CONFIRMED' && (
+                  <Button variant="ghost" className="shrink-0 py-1.5 px-3 text-xs" onClick={() => setReprogramando(item.reservation!)}>
+                    <CalendarClock size={14} /> Reprogramar
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
         )}
       </Card>
+
+      {reprogramando && (
+        <ReprogramarModal reservation={reprogramando} open onClose={() => setReprogramando(null)} />
+      )}
     </div>
   );
 };
