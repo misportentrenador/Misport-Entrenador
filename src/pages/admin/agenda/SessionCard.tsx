@@ -7,13 +7,14 @@ import { AgendaSession } from './AgendaSession';
 import { useSessionActions } from './useSessionActions';
 import { RegistrarPagoModal } from './RegistrarPagoModal';
 import { AnadirNotaModal } from './AnadirNotaModal';
+import { CrearIncidenciaModal } from './CrearIncidenciaModal';
 
 interface SessionCardProps {
   session: AgendaSession;
   compact?: boolean;
 }
 
-type ActiveModal = 'registrar_pago' | 'anadir_nota' | null;
+type ActiveModal = 'registrar_pago' | 'anadir_nota' | 'crear_incidencia' | null;
 
 export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) => {
   const { centers, trainers } = useApp();
@@ -21,6 +22,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
   const { actions, completingIds } = useSessionActions({
     onOpenRegistrarPago: () => setActiveModal('registrar_pago'),
     onOpenAnadirNota: () => setActiveModal('anadir_nota'),
+    onOpenCrearIncidencia: () => setActiveModal('crear_incidencia'),
   });
   const r = session.reservation;
   const center = centers.find(c => c.id === r.centerId);
@@ -62,6 +64,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
 
       <RegistrarPagoModal session={session} open={activeModal === 'registrar_pago'} onClose={() => setActiveModal(null)} />
       <AnadirNotaModal session={session} open={activeModal === 'anadir_nota'} onClose={() => setActiveModal(null)} />
+      <CrearIncidenciaModal session={session} open={activeModal === 'crear_incidencia'} onClose={() => setActiveModal(null)} />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote } from 'lucide-react';
+import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote, AlertTriangle } from 'lucide-react';
 import { AgendaSession } from './AgendaSession';
 
 /**
@@ -10,8 +10,8 @@ import { AgendaSession } from './AgendaSession';
  *
  * Claves reservadas para Sprints futuros (no implementadas: dependen de
  * lógica de negocio o integraciones que todavía no existen):
- * 'consumir_bono' | 'whatsapp' | 'crear_incidencia' | 'reprogramar' |
- * 'confirmar_asistencia' | 'nueva_reserva'.
+ * 'consumir_bono' | 'whatsapp' | 'reprogramar' | 'confirmar_asistencia' |
+ * 'nueva_reserva'.
  */
 export interface SessionAction {
   key: string;
@@ -28,9 +28,10 @@ interface BuildSessionActionsArgs {
   onViewFicha: (session: AgendaSession) => void;
   onRegistrarPago: (session: AgendaSession) => void;
   onAnadirNota: (session: AgendaSession) => void;
+  onCrearIncidencia: (session: AgendaSession) => void;
 }
 
-export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota }: BuildSessionActionsArgs): SessionAction[] {
+export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota, onCrearIncidencia }: BuildSessionActionsArgs): SessionAction[] {
   return [
     {
       key: 'completar',
@@ -71,6 +72,14 @@ export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegis
       variant: 'ghost',
       isAvailable: (s) => !!s.reservation.personaId,
       onSelect: onAnadirNota,
+    },
+    {
+      key: 'crear_incidencia',
+      label: 'Crear incidencia',
+      icon: AlertTriangle,
+      variant: 'ghost',
+      isAvailable: (s) => !!s.reservation.personaId,
+      onSelect: onCrearIncidencia,
     },
   ];
 }

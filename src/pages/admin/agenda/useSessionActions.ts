@@ -7,10 +7,11 @@ import { buildSessionActions } from './sessionActions';
 interface UseSessionActionsArgs {
   onOpenRegistrarPago: (session: AgendaSession) => void;
   onOpenAnadirNota: (session: AgendaSession) => void;
+  onOpenCrearIncidencia: (session: AgendaSession) => void;
 }
 
 /** Conecta el registro declarativo de acciones con la lógica real ya existente. */
-export function useSessionActions({ onOpenRegistrarPago, onOpenAnadirNota }: UseSessionActionsArgs) {
+export function useSessionActions({ onOpenRegistrarPago, onOpenAnadirNota, onOpenCrearIncidencia }: UseSessionActionsArgs) {
   const { cancelReservation } = useApp();
   const { handleComplete, completingIds } = useCompleteReservation();
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ export function useSessionActions({ onOpenRegistrarPago, onOpenAnadirNota }: Use
     },
     onRegistrarPago: onOpenRegistrarPago,
     onAnadirNota: onOpenAnadirNota,
+    onCrearIncidencia: onOpenCrearIncidencia,
   });
 
   return { actions, completingIds };
