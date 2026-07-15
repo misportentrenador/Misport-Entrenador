@@ -25,13 +25,13 @@ export const DayView: React.FC<DayViewProps> = ({ day, onDayChange, sessions }) 
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-400 capitalize">{dayLabel} {isToday && <span className="text-misportBlue font-bold">· Hoy</span>}</p>
         <div className="flex items-center gap-2">
-          <button onClick={() => onDayChange(addDays(day, -1))} className="p-2.5 rounded-lg border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-all">
+          <button onClick={() => onDayChange(addDays(day, -1))} aria-label="Día anterior" className="p-2.5 rounded-lg border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-all">
             <ChevronLeft size={18} />
           </button>
           <button onClick={() => onDayChange(new Date())} className="px-4 py-2.5 rounded-lg border border-gray-800 text-sm text-gray-400 hover:text-white hover:border-gray-700 transition-all">
             Hoy
           </button>
-          <button onClick={() => onDayChange(addDays(day, 1))} className="p-2.5 rounded-lg border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-all">
+          <button onClick={() => onDayChange(addDays(day, 1))} aria-label="Día siguiente" className="p-2.5 rounded-lg border border-gray-800 text-gray-400 hover:text-white hover:border-gray-700 transition-all">
             <ChevronRight size={18} />
           </button>
         </div>
