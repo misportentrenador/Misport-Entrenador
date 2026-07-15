@@ -13,6 +13,7 @@ import { BonosPorCaducarPanel } from './inicio/BonosPorCaducarPanel';
 import { PendientesRegularizarPanel } from './inicio/PendientesRegularizarPanel';
 import { EmbudoComercialPanel } from './inicio/EmbudoComercialPanel';
 import { ProximasAccionesPanel } from './inicio/ProximasAccionesPanel';
+import { CobrosPendientesPanel } from './inicio/CobrosPendientesPanel';
 
 export const InicioPage: React.FC = () => {
   const { reservations, centers, trainers } = useApp();
@@ -86,6 +87,7 @@ export const InicioPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <BonosPorCaducarPanel />
         <PendientesRegularizarPanel />
+        <CobrosPendientesPanel />
         <EmbudoComercialPanel />
         <ProximasAccionesPanel />
       </div>

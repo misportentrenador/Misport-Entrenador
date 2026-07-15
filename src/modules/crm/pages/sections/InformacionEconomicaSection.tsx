@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Wallet, Plus, Save, FileText, Download } from 'lucide-react';
+import { Wallet, Plus, Save, FileText, Download, CircleDollarSign } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { useCatalog } from '../../../catalog/context/CatalogContext';
 import { useMasterData } from '../../../masterdata/context/MasterDataContext';
-import { useFinance } from '../../../../context/FinanceContext';
+import { useFinance, getImportePendiente } from '../../../../context/FinanceContext';
 import { useApp } from '../../../../context/AppContext';
 import { FINANCE_SERVICES } from '../../../../constants';
 import { FinanceServiceName } from '../../../../types';
@@ -35,7 +35,7 @@ const emptyPagoForm = { date: new Date().toISOString().slice(0, 10), trainerName
 export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
   const { bonosCliente } = useCRM();
   const { bonos } = useCatalog();
-  const { entries, addEntry, computeTotals, facturas, generarFactura, datosFiscales } = useFinance();
+  const { entries, addEntry, computeTotals, facturas, generarFactura, datosFiscales, cobros, marcarComoCobrada } = useFinance();
   const { trainers, centers } = useApp();
   const { personas } = useMasterData();
   const persona = personas.items.find(p => p.id === personaId);
@@ -158,31 +158,56 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
           <div className="overflow-x-auto mb-4">
             <table className="w-full text-sm text-left text-gray-400">
               <thead className="text-xs text-gray-500 uppercase bg-gray-900/50 border-b border-gray-800">
-                <tr><th className="px-4 py-2">Fecha</th><th className="px-4 py-2">Servicio</th><th className="px-4 py-2 text-right">Importe</th><th className="px-4 py-2 text-right">Factura</th></tr>
+                <tr><th className="px-4 py-2">Fecha</th><th className="px-4 py-2">Servicio</th><th className="px-4 py-2 text-right">Importe</th><th className="px-4 py-2">Factura</th><th className="px-4 py-2 text-right">Acciones</th></tr>
               </thead>
               <tbody>
                 {misPagos.map(p => {
                   const factura = facturas.find(f => f.financeEntryId === p.id);
+                  const pendiente = factura ? getImportePendiente(factura, cobros) : 0;
                   return (
                     <tr key={p.id} className="border-b border-gray-800">
                       <td className="px-4 py-2 text-white">{p.date}</td>
                       <td className="px-4 py-2">{p.service}{p.groupDays ? ` (${p.groupDays}d)` : ''}</td>
                       <td className="px-4 py-2 text-right text-white">{formatEUR(computeTotals(p).billingBase)}</td>
-                      <td className="px-4 py-2 text-right">
+                      <td className="px-4 py-2">
                         {factura ? (
-                          <button onClick={() => handleDescargarFactura(p.id)} className="flex items-center gap-1 text-xs font-bold text-misportBlue hover:text-blue-400 ml-auto">
-                            <Download size={12} /> {factura.numero}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white">{factura.numero}</span>
+                            <Badge tone={factura.estado === 'cobrada' ? 'success' : factura.estado === 'anulada' ? 'neutral' : 'info'}>
+                              {factura.estado === 'emitida' ? 'Emitida' : factura.estado === 'cobrada' ? 'Cobrada' : factura.estado === 'anulada' ? 'Anulada' : 'Borrador'}
+                            </Badge>
+                            {factura.estado === 'emitida' && pendiente > 0 && (
+                              <span className="text-xs text-misportOrange">Pendiente: {formatEUR(pendiente)}</span>
+                            )}
+                          </div>
                         ) : (
-                          <button
-                            onClick={() => handleGenerarFactura(p.id)}
-                            disabled={!datosFiscalesCompletos || !persona?.docId}
-                            title={!persona?.docId ? 'El cliente no tiene DNI/NIF registrado' : undefined}
-                            className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-white ml-auto disabled:opacity-40 disabled:cursor-not-allowed"
-                          >
-                            <FileText size={12} /> Generar factura
-                          </button>
+                          <span className="text-gray-600">Sin facturar</span>
                         )}
+                      </td>
+                      <td className="px-4 py-2 text-right">
+                        <div className="flex items-center justify-end gap-3">
+                          {factura ? (
+                            <>
+                              {factura.estado === 'emitida' && (
+                                <button onClick={() => marcarComoCobrada(factura.id)} className="flex items-center gap-1 text-xs font-bold text-green-400 hover:text-green-300">
+                                  <CircleDollarSign size={12} /> Marcar como cobrada
+                                </button>
+                              )}
+                              <button onClick={() => handleDescargarFactura(p.id)} className="flex items-center gap-1 text-xs font-bold text-misportBlue hover:text-blue-400">
+                                <Download size={12} /> PDF
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => handleGenerarFactura(p.id)}
+                              disabled={!datosFiscalesCompletos || !persona?.docId}
+                              title={!persona?.docId ? 'El cliente no tiene DNI/NIF registrado' : undefined}
+                              className="flex items-center gap-1 text-xs font-bold text-gray-400 hover:text-white disabled:opacity-40 disabled:cursor-not-allowed"
+                            >
+                              <FileText size={12} /> Generar factura
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

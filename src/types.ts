@@ -153,6 +153,15 @@ export interface DatosFiscalesEmpresa {
 }
 
 /**
+ * Ciclo de vida de una Factura (Sprint 20, decisión de negocio aprobada).
+ * Este Sprint solo produce facturas directamente en 'emitida' (mismo
+ * comportamiento que "Generar factura" del Sprint 19) y las mueve a
+ * 'cobrada'; 'borrador' y 'anulada' quedan modeladas para cuando se
+ * apruebe un flujo de edición/anulación, sin necesitar cambiar el tipo.
+ */
+export type FacturaEstado = 'borrador' | 'emitida' | 'cobrada' | 'anulada';
+
+/**
  * Factura (Sprint 19, fase 1) — emitida a partir de una única FinanceEntry
  * ya registrada. Numeración correlativa única (serie AAAA-NNNN, se reinicia
  * cada año natural), decisión de negocio aprobada. Generada y descargada
@@ -168,5 +177,29 @@ export interface Factura {
   baseImponible: number;
   igicAmount: number;
   total: number;
+  estado: FacturaEstado;
+  createdAt: number;
+}
+
+/**
+ * Forma de pago de un cobro (Sprint 20) — el único flujo implementado hoy
+ * ("Marcar como cobrada") no la pide todavía; el campo es opcional para no
+ * inventar un valor cuando nadie lo ha elegido.
+ */
+export type FormaPago = 'efectivo' | 'transferencia' | 'tarjeta' | 'otro';
+
+/**
+ * Cobro aplicado a una Factura (Sprint 20). Se modela como registros
+ * independientes — en vez de un simple booleano en Factura — para poder
+ * soportar más adelante cobros parciales (varios CobroFactura sumando
+ * menos que el total) sin rediseñar nada; hoy solo se crea un único
+ * CobroFactura por el importe total al marcar la factura como cobrada.
+ */
+export interface CobroFactura {
+  id: string;
+  facturaId: string;
+  fecha: string; // ISO datetime — fecha y hora del cobro
+  importe: number;
+  formaPago?: FormaPago;
   createdAt: number;
 }

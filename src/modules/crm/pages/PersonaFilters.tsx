@@ -9,7 +9,8 @@ export type PersonaFilterId =
   | 'ems'
   | 'trail'
   | 'empresas'
-  | 'activa50';
+  | 'activa50'
+  | 'con_deuda';
 
 const FILTER_LABELS: Record<PersonaFilterId, string> = {
   activos: 'Activos',
@@ -21,9 +22,10 @@ const FILTER_LABELS: Record<PersonaFilterId, string> = {
   trail: 'Trail',
   empresas: 'Empresas',
   activa50: 'ACTIVA+50',
+  con_deuda: 'Con deuda',
 };
 
-const FILTER_ORDER: PersonaFilterId[] = ['activos', 'inactivos', 'sin_reservas', 'con_bono', 'sin_bono', 'ems', 'trail', 'empresas', 'activa50'];
+export const FILTER_ORDER: PersonaFilterId[] = ['activos', 'inactivos', 'sin_reservas', 'con_bono', 'sin_bono', 'ems', 'trail', 'empresas', 'activa50', 'con_deuda'];
 
 interface Props {
   active: Set<PersonaFilterId>;
@@ -32,10 +34,8 @@ interface Props {
 
 /**
  * Filtros predefinidos (Sprint 12) — chips activables, combinables entre sí
- * (AND). "Con deuda" queda deliberadamente fuera: no existe un concepto de
- * deuda/saldo pendiente en ningún módulo todavía; se documenta como
- * funcionalidad pendiente del futuro módulo de Facturación/Cuentas por
- * cobrar en vez de aproximarlo con datos que no lo representan de verdad.
+ * (AND). "Con deuda" (Sprint 20) usa personaTieneDeuda: al menos una
+ * Factura en estado 'emitida' con importe pendiente > 0 (FinanceContext).
  */
 export const PersonaFilters: React.FC<Props> = ({ active, onToggle }) => (
   <div className="flex flex-wrap gap-2">

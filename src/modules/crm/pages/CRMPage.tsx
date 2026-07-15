@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Contact, ArrowRight } from 'lucide-react';
 import { useMasterData } from '../../masterdata/context/MasterDataContext';
 import { useApp } from '../../../context/AppContext';
 import { useCRM } from '../context/CRMContext';
+import { useFinance, personaTieneDeuda } from '../../../context/FinanceContext';
 import { ROL_LABELS } from '../lib/labels';
 import { Persona } from '../../masterdata/types';
 import { PageHeader } from '../../../components/ui/PageHeader';
@@ -14,7 +15,7 @@ import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/EmptyState';
 import { Spinner } from '../../../components/ui/Spinner';
 import { PersonaSearchBar } from './PersonaSearchBar';
-import { PersonaFilters, PersonaFilterId } from './PersonaFilters';
+import { PersonaFilters, PersonaFilterId, FILTER_ORDER } from './PersonaFilters';
 
 /**
  * Entrada principal del CRM (Sprints 9 y 12) — entorno de trabajo diario
@@ -27,9 +28,19 @@ export const CRMPage: React.FC = () => {
   const { personas, contactos, organizaciones } = useMasterData();
   const { reservations, trainers, centers, trainingTypes } = useApp();
   const { roles, bonosCliente, perfilesDeportivos } = useCRM();
+  const { facturas, cobros } = useFinance();
+
+  const [searchParams] = useSearchParams();
 
   const [query, setQuery] = useState('');
-  const [activeFilters, setActiveFilters] = useState<Set<PersonaFilterId>>(new Set());
+  const [activeFilters, setActiveFilters] = useState<Set<PersonaFilterId>>(() => {
+    // Permite enlazar directamente a un filtro (p. ej. "Cobros pendientes"
+    // del Dashboard, Sprint 20) vía /admin/crm?filtro=con_deuda.
+    const requested = searchParams.get('filtro');
+    return requested && (FILTER_ORDER as string[]).includes(requested)
+      ? new Set([requested as PersonaFilterId])
+      : new Set();
+  });
 
   const toggleFilter = (id: PersonaFilterId) => {
     setActiveFilters(prev => {
@@ -100,6 +111,9 @@ export const CRMPage: React.FC = () => {
         case 'activa50':
           if (!roles.items.some(r => r.personaId === p.id && r.isActive && r.tipo === 'activa50')) return false;
           break;
+        case 'con_deuda':
+          if (!personaTieneDeuda(p.id, facturas, cobros)) return false;
+          break;
       }
     }
     return true;
@@ -108,7 +122,7 @@ export const CRMPage: React.FC = () => {
   const filteredPersonas = useMemo(
     () => personas.items.filter(p => matchesSearch(p) && matchesFilters(p)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [personas.items, query, activeFilters, contactos.items, organizaciones.items, reservations, trainers, centers, trainingTypes, perfilesDeportivos.items, bonosCliente.items, roles.items]
+    [personas.items, query, activeFilters, contactos.items, organizaciones.items, reservations, trainers, centers, trainingTypes, perfilesDeportivos.items, bonosCliente.items, roles.items, facturas, cobros]
   );
 
   const columns: TableColumn<Persona>[] = [

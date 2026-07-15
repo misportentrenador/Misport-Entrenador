@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, DatosFiscalesEmpresa, Factura } from '../types';
+import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, DatosFiscalesEmpresa, Factura, CobroFactura } from '../types';
 import { Rate } from '../modules/catalog/types';
 import { useCatalog } from '../modules/catalog/context/CatalogContext';
 import { DEFAULT_FINANCE_PARAMS, DEFAULT_DATOS_FISCALES } from '../constants';
@@ -10,11 +10,32 @@ const PARAMS_KEY = STORAGE_KEYS.financeParams;
 const ENTRIES_KEY = STORAGE_KEYS.financeEntries;
 const FACTURAS_KEY = STORAGE_KEYS.financeFacturas;
 const FISCAL_CONFIG_KEY = STORAGE_KEYS.fiscalConfig;
+const COBROS_KEY = STORAGE_KEYS.financeCobros;
 
 /** Serie única correlativa, se reinicia cada año natural (decisión aprobada, Sprint 19). */
 export function nextInvoiceNumber(facturas: Factura[], year: number): string {
   const countThisYear = facturas.filter(f => f.anio === year).length;
   return `${year}-${String(countThisYear + 1).padStart(4, '0')}`;
+}
+
+/**
+ * Importe pendiente de una factura (Sprint 20) — total menos la suma de
+ * sus cobros. Con el único flujo de hoy (cobro único por el total) siempre
+ * da 0 o el total completo, pero ya admite cobros parciales futuros sin
+ * cambiar esta función.
+ */
+export function getImportePendiente(factura: Factura, cobros: CobroFactura[]): number {
+  const cobrado = cobros.filter(c => c.facturaId === factura.id).reduce((sum, c) => sum + c.importe, 0);
+  return Math.max(0, factura.total - cobrado);
+}
+
+/**
+ * "Con deuda" (Sprint 20, decisión de negocio aprobada): al menos una
+ * factura en estado 'emitida' con importe pendiente > 0. Borrador y
+ * Anulada nunca generan deuda.
+ */
+export function personaTieneDeuda(personaId: string, facturas: Factura[], cobros: CobroFactura[]): boolean {
+  return facturas.some(f => f.personaId === personaId && f.estado === 'emitida' && getImportePendiente(f, cobros) > 0);
 }
 
 /**
@@ -95,6 +116,9 @@ interface FinanceContextType {
   facturas: Factura[];
   /** Emite la factura de una FinanceEntry ya registrada — numeración correlativa única. */
   generarFactura: (entry: FinanceEntry) => Factura;
+  cobros: CobroFactura[];
+  /** Registra el cobro del importe pendiente y pasa la factura a 'cobrada' (Sprint 20). */
+  marcarComoCobrada: (facturaId: string) => void;
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
@@ -105,6 +129,7 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [datosFiscales, setDatosFiscales] = useState<DatosFiscalesEmpresa>(DEFAULT_DATOS_FISCALES);
   const [facturas, setFacturas] = useState<Factura[]>([]);
+  const [cobros, setCobros] = useState<CobroFactura[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -136,6 +161,13 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       console.error('Failed to load facturas', e);
     }
 
+    try {
+      const storedCobros = localStorage.getItem(COBROS_KEY);
+      if (storedCobros) setCobros(JSON.parse(storedCobros));
+    } catch (e) {
+      console.error('Failed to load cobros', e);
+    }
+
     setLoaded(true);
   }, []);
 
@@ -158,6 +190,11 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
     if (!loaded) return;
     localStorage.setItem(FACTURAS_KEY, JSON.stringify(facturas));
   }, [facturas, loaded]);
+
+  useEffect(() => {
+    if (!loaded) return;
+    localStorage.setItem(COBROS_KEY, JSON.stringify(cobros));
+  }, [cobros, loaded]);
 
   const updateParams = (next: FinanceParams) => setParams(next);
   const updateDatosFiscales = (next: DatosFiscalesEmpresa) => setDatosFiscales(next);
@@ -193,16 +230,35 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       baseImponible: totals.billingBase,
       igicAmount: totals.igicAmount,
       total: totals.totalCharged,
+      estado: 'emitida',
       createdAt: Date.now(),
     };
     setFacturas(prev => [...prev, factura]);
     return factura;
   };
 
+  const marcarComoCobrada = (facturaId: string) => {
+    const factura = facturas.find(f => f.id === facturaId);
+    if (!factura) return;
+    const pendiente = getImportePendiente(factura, cobros);
+    if (pendiente <= 0) return;
+
+    const cobro: CobroFactura = {
+      id: `cob_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      facturaId,
+      fecha: new Date().toISOString(),
+      importe: pendiente,
+      createdAt: Date.now(),
+    };
+    setCobros(prev => [...prev, cobro]);
+    setFacturas(prev => prev.map(f => f.id === facturaId ? { ...f, estado: 'cobrada' } : f));
+  };
+
   return (
     <FinanceContext.Provider value={{
       params, updateParams, entries, addEntry, deleteEntry, computeTotals,
       datosFiscales, updateDatosFiscales, facturas, generarFactura,
+      cobros, marcarComoCobrada,
     }}>
       {children}
     </FinanceContext.Provider>

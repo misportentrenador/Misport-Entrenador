@@ -11,6 +11,7 @@ export const STORAGE_KEYS = {
   agendaConfig: 'misport_agenda_config',
   financeEntries: 'misport_finance_entries',
   financeFacturas: 'misport_finance_facturas',
+  financeCobros: 'misport_finance_cobros',
   fiscalConfig: 'misport_fiscal_config',
   catalogCenters: 'misport_catalog_centers',
   catalogTrainers: 'misport_catalog_trainers',
