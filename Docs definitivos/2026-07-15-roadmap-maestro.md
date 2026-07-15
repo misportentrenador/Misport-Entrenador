@@ -58,11 +58,7 @@ Hoy están construidos, con distintos grados de madurez: CRM, Agenda, Reservas, 
 
 ## Sprint actual
 
-Ninguno abierto. Cerrados e implementados (pendientes de autorización de commit/push):
-- **Sprint 17** (`crear_incidencia` en la Agenda).
-- **Sprint 18** (`nueva_reserva` desde la Agenda + arquitectura completa de integraciones de calendario y la integración con Google Calendar en modo lectura, con credenciales de prueba — sin conectar todavía la cuenta real).
-
-El Roadmap queda a la espera de que se autoricen para proponer el **Sprint 19**.
+Ninguno abierto. El **Sprint 19** (Facturación fase 1 — factura en PDF desde una `FinanceEntry`, numeración correlativa única `AAAA-NNNN`) está implementado y probado. El Roadmap propone el **Sprint 20** (Cobros/Cuentas por cobrar) como siguiente.
 
 ---
 
@@ -75,7 +71,7 @@ El Roadmap queda a la espera de que se autoricen para proponer el **Sprint 19**.
 - Integración Booksy — bloqueada hasta confirmar si existe API pública y decisión de negocio.
 - Integración TrainingPeaks — bloqueada hasta confirmar API y decisión de negocio.
 - Integración Gmail (resumen de correo relevante en el Dashboard) — bloqueada hasta decisión de negocio.
-- Módulo de Facturación / Cuentas por cobrar — desbloquea el filtro "Con deuda" del CRM (Sprint 12, documentado como pendiente).
+- Facturación fase 1 completada en el Sprint 19 (factura en PDF, numeración correlativa única, datos fiscales de la empresa). Cobros/Cuentas por cobrar (marcar una factura como cobrada, desbloquear el filtro "Con deuda" del CRM) queda como Sprint 20 propuesto — ya no requiere definir "deuda" desde cero: se apoya en las `Factura` ya emitidas.
 - Framework de pruebas automatizado versionado (hoy la regresión se verifica con scripts ad-hoc no persistidos) — decisión de arquitectura pendiente.
 - Auditoría de accesibilidad ampliada (Catálogo, Datos Maestros).
 - Eliminación de `Persona.notes` (deprecado desde Sprint 8, pendiente de que el CRM quede consolidado — deuda de migración documentada).
@@ -90,8 +86,8 @@ El Roadmap queda a la espera de que se autoricen para proponer el **Sprint 19**.
 ## Dependencias clave
 
 - Cualquier integración externa depende de: (a) decisión estratégica explícita (crear proyecto/credenciales en la plataforma externa), (b) alta de credenciales/API keys (nunca en código, vía variables de entorno), (c) posible coste recurrente a aprobar.
-- El módulo de Facturación depende de una decisión de negocio/fiscal (requisitos legales de factura, numeración, series) antes de poder diseñarse — no es solo una decisión técnica.
-- El módulo de Cobros/Cuentas por cobrar depende de una decisión de modelo de datos (qué es "deuda", cómo se calcula) antes de poder diseñarse.
+- Facturación (fase 1, Sprint 19): completada — serie única correlativa `AAAA-NNNN`, datos fiscales de la empresa editables desde Finanzas.
+- Cobros/Cuentas por cobrar (Sprint 20 propuesto): con `Factura` ya existente, "deuda" puede definirse como la suma de facturas no marcadas como cobradas por cliente — decisión de negocio mucho más acotada que antes del Sprint 19, pendiente de tu confirmación en el diseño.
 - `confirmar_asistencia` depende de decidir si se amplía el ciclo de vida de `ReservationStatus`.
 - `reprogramar` depende de decidir si valida disponibilidad/capacidad en el nuevo horario.
 
@@ -103,8 +99,7 @@ Reordenados el 2026-07-15 según el nuevo orden de prioridad (1. eliminar trabaj
 
 | # | Sprint | Prioridad que satisface | Bloqueo |
 |---|---|---|---|
-| 19 | Facturación — fase 1: generar factura/PDF desde una `FinanceEntry` ya registrada | 1 — elimina el trabajo manual de facturar fuera del sistema | **Bloqueado — decisión de negocio/fiscal**: requisitos legales de la factura (numeración, series, datos fiscales) |
-| 20 | Cobros / Cuentas por cobrar (desbloquea el filtro "Con deuda" del CRM) | 1 y 3 | **Bloqueado**: requiere definir qué es "deuda" y cómo se calcula |
+| 20 | Cobros / Cuentas por cobrar: marcar una `Factura` como cobrada, desbloquear el filtro "Con deuda" del CRM | 1 y 3 | Propuesta concreta de "deuda" a confirmar en el diseño (ya no bloqueado desde cero, gracias a `Factura` del Sprint 19) |
 | 21 | Segunda integración de calendario (Outlook o Apple Calendar, mismo adaptador que Google Calendar) o conexión real de Google Calendar (activar credenciales) | 2 y 3 | Conexión real de Google Calendar: solo pendiente de que crees las credenciales (sin bloqueo técnico). Segunda integración: nueva implementación de `CalendarSourceAdapter`, sin bloqueo de arquitectura |
 | 22 | Segunda integración real (WhatsApp, para centralizar comunicación) | 2 y 3 | **Bloqueado**: decisión de proveedor y coste |
 | 23 | `reprogramar` reserva desde Agenda | 1 — elimina el trabajo manual de cancelar + crear de nuevo | Requiere tu decisión de negocio (reglas de disponibilidad) |
@@ -113,7 +108,7 @@ Reordenados el 2026-07-15 según el nuevo orden de prioridad (1. eliminar trabaj
 | 26 | Framework de pruebas automatizado versionado + auditoría de accesibilidad ampliada | Ninguna de las 4 preguntas directamente — ciclo de mantenimiento del 20% técnico | Requiere tu decisión sobre herramienta de pruebas |
 | 27 | Eliminación de `Persona.notes` deprecado + consolidación final de notas en CRM | Deuda de migración documentada desde el Sprint 8 | Ninguno |
 
-**Recomendación de secuencia**: el Sprint 19 (Facturación fase 1) es el que más preguntas de filtro satisface de lo que queda sin empezar, pero requiere que definas primero los requisitos fiscales de la factura — ver la pregunta que te planteo en el informe de cierre del Sprint 18.
+**Recomendación de secuencia**: el Sprint 20 (Cobros/Cuentas por cobrar) es ahora el de mayor prioridad sin bloqueo estratégico real — se apoya directamente en la Facturación del Sprint 19.
 
 Este orden se revisará automáticamente al cierre de cada Sprint, por si el estado del proyecto cambia la prioridad.
 
@@ -125,3 +120,4 @@ Este orden se revisará automáticamente al cierre de cada Sprint, por si el est
 - **2026-07-15**: actualizado tras la implementación del Sprint 17 (`crear_incidencia`); se propone el Sprint 18 (`nueva_reserva` desde la Agenda) como siguiente.
 - **2026-07-15**: incorporada la nueva misión ("gestionar el 100% de la jornada desde MISPORT OS"), las 4 preguntas de filtro, el nuevo orden de prioridad de 5 niveles y la visión a largo plazo de 18 dominios. Reordenados los próximos Sprints; se propone desbloquear el diseño de la integración con Google Calendar como Sprint 18 principal, con `nueva_reserva` como alternativa sin bloqueo.
 - **2026-07-15**: cerrado el Sprint 18 — arquitectura de integraciones de calendario (`CalendarSourceAdapter`), integración con Google Calendar en modo lectura (probada con credenciales de prueba, sin conectar la cuenta real) y `nueva_reserva` desde la Agenda. Se propone el Sprint 19 (Facturación fase 1) como siguiente, bloqueado por una decisión fiscal.
+- **2026-07-15**: cerrado el Sprint 19 — Facturación fase 1 (entidad `Factura`, numeración correlativa única `AAAA-NNNN` con serie única elegida por el Director General, datos fiscales de la empresa, generación de PDF en el navegador con `jspdf` cargado bajo demanda). Se propone el Sprint 20 (Cobros/Cuentas por cobrar) como siguiente.
