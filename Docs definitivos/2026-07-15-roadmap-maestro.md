@@ -58,14 +58,19 @@ Hoy están construidos, con distintos grados de madurez: CRM, Agenda, Reservas, 
 
 ## Sprint actual
 
-Ninguno abierto. El **Sprint 17** (`crear_incidencia` como acción rápida de Agenda) está implementado, probado (creación de incidencia desde la Agenda verificada y sincronizada con la Ficha CRM, sin regresión en las 5 acciones previas) y pendiente de commit/push. El Roadmap queda a la espera de que se cierre formalmente ese Sprint para proponer el **Sprint 18** (ver sección "Próximos Sprints").
+Ninguno abierto. Cerrados e implementados (pendientes de autorización de commit/push):
+- **Sprint 17** (`crear_incidencia` en la Agenda).
+- **Sprint 18** (`nueva_reserva` desde la Agenda + arquitectura completa de integraciones de calendario y la integración con Google Calendar en modo lectura, con credenciales de prueba — sin conectar todavía la cuenta real).
+
+El Roadmap queda a la espera de que se autoricen para proponer el **Sprint 19**.
 
 ---
 
 ## Backlog general (no priorizado por Sprint todavía)
 
-- Acciones rápidas de Agenda pendientes: `consumir_bono` (manual), `reprogramar`, `confirmar_asistencia`, `nueva_reserva`. (`crear_incidencia` completada en el Sprint 17.)
-- Primera integración externa real (candidata: Google Calendar, por ser "calendario maestro" según la Regla de Integración) — **bloqueada hasta decisión de negocio** (credenciales, coste, alcance).
+- Acciones rápidas de Agenda pendientes: `consumir_bono` (manual), `reprogramar`, `confirmar_asistencia`. (`crear_incidencia` completada en el Sprint 17; `nueva_reserva` completada en el Sprint 18.)
+- Conexión real de Google Calendar (arquitectura, adaptador y modo lectura ya implementados y probados con credenciales de prueba en el Sprint 18) — **bloqueada solo por la creación de credenciales reales en Google Cloud por parte del Director General**, ver `Docs definitivos/2026-07-15-integracion-google-calendar.md`.
+- Sincronización bidireccional de Google Calendar (crear/editar eventos desde MISPORT) — decisión de negocio explícitamente pendiente, no técnica.
 - Integración WhatsApp (comunicación) — bloqueada hasta decisión de negocio (proveedor, coste).
 - Integración Booksy — bloqueada hasta confirmar si existe API pública y decisión de negocio.
 - Integración TrainingPeaks — bloqueada hasta confirmar API y decisión de negocio.
@@ -98,18 +103,17 @@ Reordenados el 2026-07-15 según el nuevo orden de prioridad (1. eliminar trabaj
 
 | # | Sprint | Prioridad que satisface | Bloqueo |
 |---|---|---|---|
-| 18 | **Diseño de la integración con Google Calendar** (lectura: mostrar y sincronizar eventos externos dentro de la Agenda) | 2 — elimina el cambio a otra aplicación para ver el calendario maestro | **Bloqueado — decisión estratégica**: requiere crear un proyecto en Google Cloud, decidir alcance (solo lectura vs. lectura/escritura) y confirmar que no implica coste. Puedo presentar el diseño técnico completo en cuanto se autorice. |
-| 18-alt | `nueva_reserva` desde la Agenda (abrir Booking Wizard en modal/contexto) | 5 — nueva funcionalidad, cierra el último hueco de la Agenda | Ninguno — **listo para diseñar y aprobar ya**, como opción sin bloqueo mientras se decide sobre la integración de calendario |
 | 19 | Facturación — fase 1: generar factura/PDF desde una `FinanceEntry` ya registrada | 1 — elimina el trabajo manual de facturar fuera del sistema | **Bloqueado — decisión de negocio/fiscal**: requisitos legales de la factura (numeración, series, datos fiscales) |
 | 20 | Cobros / Cuentas por cobrar (desbloquea el filtro "Con deuda" del CRM) | 1 y 3 | **Bloqueado**: requiere definir qué es "deuda" y cómo se calcula |
-| 21 | Segunda integración real (WhatsApp, para centralizar comunicación) | 2 y 3 | **Bloqueado**: decisión de proveedor y coste |
-| 22 | `reprogramar` reserva desde Agenda | 1 — elimina el trabajo manual de cancelar + crear de nuevo | Requiere tu decisión de negocio (reglas de disponibilidad) |
-| 23 | `confirmar_asistencia` (nuevo estado del ciclo de vida) | 4 — automatiza el control de asistencia | Requiere tu decisión de negocio (nuevo estado) |
-| 24 | `consumir_bono` manual (fuera de completar sesión) | 1 | Requiere tu decisión de negocio (justificación del descuento manual) |
-| 25 | Framework de pruebas automatizado versionado + auditoría de accesibilidad ampliada | Ninguna de las 4 preguntas directamente — ciclo de mantenimiento del 20% técnico | Requiere tu decisión sobre herramienta de pruebas |
-| 26 | Eliminación de `Persona.notes` deprecado + consolidación final de notas en CRM | Deuda de migración documentada desde el Sprint 8 | Ninguno |
+| 21 | Segunda integración de calendario (Outlook o Apple Calendar, mismo adaptador que Google Calendar) o conexión real de Google Calendar (activar credenciales) | 2 y 3 | Conexión real de Google Calendar: solo pendiente de que crees las credenciales (sin bloqueo técnico). Segunda integración: nueva implementación de `CalendarSourceAdapter`, sin bloqueo de arquitectura |
+| 22 | Segunda integración real (WhatsApp, para centralizar comunicación) | 2 y 3 | **Bloqueado**: decisión de proveedor y coste |
+| 23 | `reprogramar` reserva desde Agenda | 1 — elimina el trabajo manual de cancelar + crear de nuevo | Requiere tu decisión de negocio (reglas de disponibilidad) |
+| 24 | `confirmar_asistencia` (nuevo estado del ciclo de vida) | 4 — automatiza el control de asistencia | Requiere tu decisión de negocio (nuevo estado) |
+| 25 | `consumir_bono` manual (fuera de completar sesión) | 1 | Requiere tu decisión de negocio (justificación del descuento manual) |
+| 26 | Framework de pruebas automatizado versionado + auditoría de accesibilidad ampliada | Ninguna de las 4 preguntas directamente — ciclo de mantenimiento del 20% técnico | Requiere tu decisión sobre herramienta de pruebas |
+| 27 | Eliminación de `Persona.notes` deprecado + consolidación final de notas en CRM | Deuda de migración documentada desde el Sprint 8 | Ninguno |
 
-**Recomendación de secuencia**: dado que casi todo lo de mayor prioridad requiere una decisión tuya, propongo desbloquear en paralelo la integración de Google Calendar (#18) — es la que más preguntas de filtro satisface — y, si prefieres seguir sin pausas mientras decides, avanzar con `nueva_reserva` (#18-alt) como Sprint intermedio sin bloqueo.
+**Recomendación de secuencia**: el Sprint 19 (Facturación fase 1) es el que más preguntas de filtro satisface de lo que queda sin empezar, pero requiere que definas primero los requisitos fiscales de la factura — ver la pregunta que te planteo en el informe de cierre del Sprint 18.
 
 Este orden se revisará automáticamente al cierre de cada Sprint, por si el estado del proyecto cambia la prioridad.
 
@@ -120,3 +124,4 @@ Este orden se revisará automáticamente al cierre de cada Sprint, por si el est
 - **2026-07-15**: creación inicial, tras el cierre del Sprint 16 y la sesión de hardening técnico (fix de login, code-splitting, manualChunks, package.json, a11y, extracción de `PagoFormFields`).
 - **2026-07-15**: actualizado tras la implementación del Sprint 17 (`crear_incidencia`); se propone el Sprint 18 (`nueva_reserva` desde la Agenda) como siguiente.
 - **2026-07-15**: incorporada la nueva misión ("gestionar el 100% de la jornada desde MISPORT OS"), las 4 preguntas de filtro, el nuevo orden de prioridad de 5 niveles y la visión a largo plazo de 18 dominios. Reordenados los próximos Sprints; se propone desbloquear el diseño de la integración con Google Calendar como Sprint 18 principal, con `nueva_reserva` como alternativa sin bloqueo.
+- **2026-07-15**: cerrado el Sprint 18 — arquitectura de integraciones de calendario (`CalendarSourceAdapter`), integración con Google Calendar en modo lectura (probada con credenciales de prueba, sin conectar la cuenta real) y `nueva_reserva` desde la Agenda. Se propone el Sprint 19 (Facturación fase 1) como siguiente, bloqueado por una decisión fiscal.
