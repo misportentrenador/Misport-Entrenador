@@ -20,7 +20,8 @@ interface CrearIncidenciaModalProps {
  */
 export const CrearIncidenciaModal: React.FC<CrearIncidenciaModalProps> = ({ session, open, onClose }) => {
   const { incidencias } = useCRM();
-  const r = session.reservation;
+  // SessionCard solo monta este modal para sesiones origin === 'misport', que siempre tienen reservation.
+  const r = session.reservation!;
   const [tipo, setTipo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [saved, setSaved] = useState(false);

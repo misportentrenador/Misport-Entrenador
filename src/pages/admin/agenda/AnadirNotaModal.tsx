@@ -19,7 +19,8 @@ interface AnadirNotaModalProps {
  */
 export const AnadirNotaModal: React.FC<AnadirNotaModalProps> = ({ session, open, onClose }) => {
   const { notas } = useCRM();
-  const r = session.reservation;
+  // SessionCard solo monta este modal para sesiones origin === 'misport', que siempre tienen reservation.
+  const r = session.reservation!;
   const [contenido, setContenido] = useState('');
   const [saved, setSaved] = useState(false);
 

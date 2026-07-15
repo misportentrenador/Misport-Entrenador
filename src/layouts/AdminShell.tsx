@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Outlet, Link } from 'react-router-dom';
-import { Sparkles, Link2, Calendar, Receipt, Menu } from 'lucide-react';
+import { Sparkles, Link2, Receipt, Menu } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Sidebar, SidebarNavItem, SidebarComingSoonItem } from '../components/ui/Sidebar';
 import { ADMIN_ROUTES } from '../app/routes';
@@ -11,10 +11,14 @@ const NAV_ITEMS: SidebarNavItem[] = ADMIN_ROUTES.filter(route => route.showInNav
   icon: route.icon,
 }));
 
+/**
+ * "Google Calendar" se retira de esta lista en el Sprint 18: ya no es
+ * "Próximamente" — la integración real (solo lectura) vive dentro de la
+ * Agenda ("Integraciones").
+ */
 const COMING_SOON: SidebarComingSoonItem[] = [
   { label: 'Asistente IA', icon: Sparkles },
   { label: 'Booksy', icon: Link2 },
-  { label: 'Google Calendar', icon: Calendar },
   { label: 'Facturación avanzada', icon: Receipt },
 ];
 

@@ -5,6 +5,7 @@ import { toISODate } from '../../../shared/lib/date';
 import { AgendaSession } from './AgendaSession';
 
 interface ProximasSesionesPanelProps {
+  /** El llamador (AgendaPage) filtra a origin === 'misport' antes de pasarlas. */
   sessions: AgendaSession[];
 }
 
@@ -15,7 +16,7 @@ export const ProximasSesionesPanel: React.FC<ProximasSesionesPanelProps> = ({ se
 
   const proximas = useMemo(
     () => sessions
-      .filter(s => s.reservation.status === 'CONFIRMED' && (s.date > nowISO || (s.date === nowISO && s.startTime >= nowTime)))
+      .filter(s => s.reservation!.status === 'CONFIRMED' && (s.date > nowISO || (s.date === nowISO && s.startTime >= nowTime)))
       .sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))
       .slice(0, 6),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -30,13 +31,13 @@ export const ProximasSesionesPanel: React.FC<ProximasSesionesPanelProps> = ({ se
       </div>
       <div className="divide-y divide-gray-800">
         {proximas.map(s => {
-          const center = centers.find(c => c.id === s.reservation.centerId);
-          const trainer = trainers.find(t => t.id === s.reservation.trainerId);
+          const center = centers.find(c => c.id === s.reservation!.centerId);
+          const trainer = trainers.find(t => t.id === s.reservation!.trainerId);
           return (
             <div key={s.id} className="px-5 py-3.5 flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-white font-medium truncate">{center?.name ?? 'Centro desconocido'}</p>
-                <p className="text-xs text-gray-500 truncate">{trainer?.name ?? 'Sin entrenador'} · {s.reservation.userName}</p>
+                <p className="text-xs text-gray-500 truncate">{trainer?.name ?? 'Sin entrenador'} · {s.reservation!.userName}</p>
               </div>
               <div className="text-right shrink-0">
                 <p className="text-sm text-white">{s.date}</p>

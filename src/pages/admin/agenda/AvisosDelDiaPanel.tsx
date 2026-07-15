@@ -8,6 +8,7 @@ import { useAgendaConfig } from '../../../context/AgendaConfigContext';
 import { AgendaSession } from './AgendaSession';
 
 interface AvisosDelDiaPanelProps {
+  /** El llamador (AgendaPage) filtra a origin === 'misport' antes de pasarlas — un evento externo de solo lectura no tiene bono/entrenador/pago que avisar. */
   sessions: AgendaSession[];
 }
 
@@ -34,15 +35,15 @@ export const AvisosDelDiaPanel: React.FC<AvisosDelDiaPanelProps> = ({ sessions }
   }, [bonosCliente.items, config.diasAvisoBonoPorCaducar]);
 
   const pendientesRegularizar = useMemo(
-    () => sessions.filter(s => s.reservation.bonoStatus === 'pending_regularization'),
+    () => sessions.filter(s => s.reservation!.bonoStatus === 'pending_regularization'),
     [sessions]
   );
 
   const sinEntrenador = useMemo(() => {
     if (!config.avisarSesionesSinEntrenador) return [];
     return sessions.filter(s => {
-      if (s.reservation.status !== 'CONFIRMED' || s.reservation.trainerId) return false;
-      const service = services.items.find(sv => sv.id === s.reservation.serviceId);
+      if (s.reservation!.status !== 'CONFIRMED' || s.reservation!.trainerId) return false;
+      const service = services.items.find(sv => sv.id === s.reservation!.serviceId);
       return service?.requiresTrainer === true;
     });
   }, [sessions, services.items, config.avisarSesionesSinEntrenador]);
@@ -75,17 +76,17 @@ export const AvisosDelDiaPanel: React.FC<AvisosDelDiaPanelProps> = ({ sessions }
         })}
         {pendientesRegularizar.map(s => (
           <div key={s.id} className="px-5 py-3 flex items-center justify-between gap-4">
-            {s.reservation.personaId ? (
-              <Link to={`/admin/crm/personas/${s.reservation.personaId}`} className="text-white hover:text-misportBlue truncate">{s.reservation.userName}</Link>
+            {s.reservation!.personaId ? (
+              <Link to={`/admin/crm/personas/${s.reservation!.personaId}`} className="text-white hover:text-misportBlue truncate">{s.reservation!.userName}</Link>
             ) : (
-              <span className="text-white truncate">{s.reservation.userName}</span>
+              <span className="text-white truncate">{s.reservation!.userName}</span>
             )}
             <span className="text-xs text-gray-500 shrink-0">Pendiente de regularizar · {s.date}</span>
           </div>
         ))}
         {sinEntrenador.map(s => (
           <div key={s.id} className="px-5 py-3 flex items-center justify-between gap-4">
-            <span className="text-white truncate">{s.reservation.userName}</span>
+            <span className="text-white truncate">{s.reservation!.userName}</span>
             <span className="text-xs text-gray-500 shrink-0">Sin entrenador asignado · {s.date} {s.startTime}</span>
           </div>
         ))}

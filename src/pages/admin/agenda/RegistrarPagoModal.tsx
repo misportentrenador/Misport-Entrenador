@@ -24,7 +24,8 @@ interface RegistrarPagoModalProps {
 export const RegistrarPagoModal: React.FC<RegistrarPagoModalProps> = ({ session, open, onClose }) => {
   const { centers, trainers } = useApp();
   const { addEntry } = useFinance();
-  const r = session.reservation;
+  // SessionCard solo monta este modal para sesiones origin === 'misport', que siempre tienen reservation.
+  const r = session.reservation!;
   const center = centers.find(c => c.id === r.centerId);
   const trainer = trainers.find(t => t.id === r.trainerId);
   const defaultService = financeServiceNameForCatalogServiceId(r.serviceId) ?? FINANCE_SERVICES[0];
