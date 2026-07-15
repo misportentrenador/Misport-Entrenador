@@ -4,7 +4,7 @@ import { useCRM } from '../../context/CRMContext';
 import { useCatalog } from '../../../catalog/context/CatalogContext';
 import { useFinance } from '../../../../context/FinanceContext';
 import { useApp } from '../../../../context/AppContext';
-import { FINANCE_SERVICES, FINANCE_ONLINE_CENTER } from '../../../../constants';
+import { FINANCE_SERVICES } from '../../../../constants';
 import { FinanceServiceName } from '../../../../types';
 import { BONO_CLIENTE_STATUS_LABELS } from '../../lib/labels';
 import { Card } from '../../../../components/ui/Card';
@@ -15,6 +15,7 @@ import { Badge } from '../../../../components/ui/Badge';
 import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
 import { formatEUR } from '../../../../shared/lib/format';
+import { PagoFormFields } from '../../../../components/PagoFormFields';
 
 interface Props {
   personaId: string;
@@ -148,22 +149,7 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
         )}
 
         <form onSubmit={handleRegisterPayment} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end pt-4 border-t border-gray-800">
-          <Input label="Fecha" type="date" value={pagoForm.date} onChange={e => setPagoForm(f => ({ ...f, date: e.target.value }))} required />
-          <Select label="Entrenador" value={pagoForm.trainerName} onChange={e => setPagoForm(f => ({ ...f, trainerName: e.target.value }))}>
-            {trainers.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
-          </Select>
-          <Select label="Centro" value={pagoForm.centerName} onChange={e => setPagoForm(f => ({ ...f, centerName: e.target.value }))}>
-            {[...centers.map(c => c.name), FINANCE_ONLINE_CENTER].map(n => <option key={n} value={n}>{n}</option>)}
-          </Select>
-          <Select label="Servicio" value={pagoForm.service} onChange={e => setPagoForm(f => ({ ...f, service: e.target.value as FinanceServiceName }))}>
-            {FINANCE_SERVICES.map(s => <option key={s} value={s}>{s}</option>)}
-          </Select>
-          {pagoForm.service === 'Entrenamiento grupal' && (
-            <Select label="Días/semana" value={pagoForm.groupDays} onChange={e => setPagoForm(f => ({ ...f, groupDays: e.target.value as '1' | '2' | '3' }))}>
-              <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-            </Select>
-          )}
-          <Input label="Cantidad" type="number" min="1" value={pagoForm.quantity} onChange={e => setPagoForm(f => ({ ...f, quantity: e.target.value }))} required />
+          <PagoFormFields value={pagoForm} onChange={setPagoForm} trainers={trainers} centers={centers} />
           <div className="sm:col-span-4 flex items-center gap-4">
             <Button type="submit"><Save size={16} /> Registrar pago</Button>
             {pagoSaved && <span className="text-green-400 text-sm font-bold">Pago registrado ✓</span>}
