@@ -1,17 +1,37 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { LucideIcon, Home, Users, CalendarDays, ClipboardList, MapPin, UserCog, Euro, Sparkles, Layers, Database, IdCard } from 'lucide-react';
-import { InicioPage } from '../pages/admin/InicioPage';
-import { ClientesPage } from '../pages/admin/ClientesPage';
-import { AgendaPage } from '../pages/admin/AgendaPage';
-import { ReservasPage } from '../pages/admin/ReservasPage';
-import { CentrosPage } from '../pages/admin/CentrosPage';
-import { EntrenadoresPage } from '../pages/admin/EntrenadoresPage';
-import { FinanzasPage } from '../pages/admin/FinanzasPage';
-import { ProximamentePage } from '../pages/admin/ProximamentePage';
-import { CatalogoPage } from '../modules/catalog/pages/CatalogoPage';
-import { DatosMaestrosPage } from '../modules/masterdata/pages/DatosMaestrosPage';
-import { CRMPage } from '../modules/crm/pages/CRMPage';
-import { FichaPersonaPage } from '../modules/crm/pages/FichaPersonaPage';
+import { Spinner } from '../components/ui/Spinner';
+
+/**
+ * Cada página admin se carga bajo demanda (Sprint técnico de rendimiento)
+ * en lugar de empaquetarse toda en el bundle inicial — reduce el peso de
+ * carga sin cambiar ningún comportamiento: mismas rutas, mismos
+ * componentes, solo su momento de descarga cambia.
+ */
+const InicioPage = React.lazy(() => import('../pages/admin/InicioPage').then(m => ({ default: m.InicioPage })));
+const ClientesPage = React.lazy(() => import('../pages/admin/ClientesPage').then(m => ({ default: m.ClientesPage })));
+const AgendaPage = React.lazy(() => import('../pages/admin/AgendaPage').then(m => ({ default: m.AgendaPage })));
+const ReservasPage = React.lazy(() => import('../pages/admin/ReservasPage').then(m => ({ default: m.ReservasPage })));
+const CentrosPage = React.lazy(() => import('../pages/admin/CentrosPage').then(m => ({ default: m.CentrosPage })));
+const EntrenadoresPage = React.lazy(() => import('../pages/admin/EntrenadoresPage').then(m => ({ default: m.EntrenadoresPage })));
+const FinanzasPage = React.lazy(() => import('../pages/admin/FinanzasPage').then(m => ({ default: m.FinanzasPage })));
+const ProximamentePage = React.lazy(() => import('../pages/admin/ProximamentePage').then(m => ({ default: m.ProximamentePage })));
+const CatalogoPage = React.lazy(() => import('../modules/catalog/pages/CatalogoPage').then(m => ({ default: m.CatalogoPage })));
+const DatosMaestrosPage = React.lazy(() => import('../modules/masterdata/pages/DatosMaestrosPage').then(m => ({ default: m.DatosMaestrosPage })));
+const CRMPage = React.lazy(() => import('../modules/crm/pages/CRMPage').then(m => ({ default: m.CRMPage })));
+const FichaPersonaPage = React.lazy(() => import('../modules/crm/pages/FichaPersonaPage').then(m => ({ default: m.FichaPersonaPage })));
+
+const PageFallback: React.FC = () => (
+  <div className="flex items-center justify-center py-24">
+    <Spinner size={28} />
+  </div>
+);
+
+const lazyPage = (Component: React.LazyExoticComponent<React.FC>): React.ReactNode => (
+  <Suspense fallback={<PageFallback />}>
+    <Component />
+  </Suspense>
+);
 
 /**
  * Single source of truth for the admin section: both the router (App.tsx)
@@ -29,16 +49,16 @@ export interface AdminRouteConfig {
 }
 
 export const ADMIN_ROUTES: AdminRouteConfig[] = [
-  { path: 'inicio', label: 'Inicio', icon: Home, element: <InicioPage />, showInNav: true },
-  { path: 'crm', label: 'CRM', icon: IdCard, element: <CRMPage />, showInNav: true },
-  { path: 'crm/personas/:personaId', label: 'Ficha CRM', icon: IdCard, element: <FichaPersonaPage />, showInNav: false },
-  { path: 'clientes', label: 'Clientes', icon: Users, element: <ClientesPage />, showInNav: true },
-  { path: 'agenda', label: 'Agenda', icon: CalendarDays, element: <AgendaPage />, showInNav: true },
-  { path: 'reservas', label: 'Reservas', icon: ClipboardList, element: <ReservasPage />, showInNav: true },
-  { path: 'catalogo', label: 'Catálogo', icon: Layers, element: <CatalogoPage />, showInNav: true },
-  { path: 'datos-maestros', label: 'Datos Maestros', icon: Database, element: <DatosMaestrosPage />, showInNav: true },
-  { path: 'centros', label: 'Centros', icon: MapPin, element: <CentrosPage />, showInNav: true },
-  { path: 'entrenadores', label: 'Entrenadores', icon: UserCog, element: <EntrenadoresPage />, showInNav: true },
-  { path: 'finanzas', label: 'Finanzas', icon: Euro, element: <FinanzasPage />, showInNav: true },
-  { path: 'proximamente', label: 'Próximamente', icon: Sparkles, element: <ProximamentePage />, showInNav: false },
+  { path: 'inicio', label: 'Inicio', icon: Home, element: lazyPage(InicioPage), showInNav: true },
+  { path: 'crm', label: 'CRM', icon: IdCard, element: lazyPage(CRMPage), showInNav: true },
+  { path: 'crm/personas/:personaId', label: 'Ficha CRM', icon: IdCard, element: lazyPage(FichaPersonaPage), showInNav: false },
+  { path: 'clientes', label: 'Clientes', icon: Users, element: lazyPage(ClientesPage), showInNav: true },
+  { path: 'agenda', label: 'Agenda', icon: CalendarDays, element: lazyPage(AgendaPage), showInNav: true },
+  { path: 'reservas', label: 'Reservas', icon: ClipboardList, element: lazyPage(ReservasPage), showInNav: true },
+  { path: 'catalogo', label: 'Catálogo', icon: Layers, element: lazyPage(CatalogoPage), showInNav: true },
+  { path: 'datos-maestros', label: 'Datos Maestros', icon: Database, element: lazyPage(DatosMaestrosPage), showInNav: true },
+  { path: 'centros', label: 'Centros', icon: MapPin, element: lazyPage(CentrosPage), showInNav: true },
+  { path: 'entrenadores', label: 'Entrenadores', icon: UserCog, element: lazyPage(EntrenadoresPage), showInNav: true },
+  { path: 'finanzas', label: 'Finanzas', icon: Euro, element: lazyPage(FinanzasPage), showInNav: true },
+  { path: 'proximamente', label: 'Próximamente', icon: Sparkles, element: lazyPage(ProximamentePage), showInNav: false },
 ];
