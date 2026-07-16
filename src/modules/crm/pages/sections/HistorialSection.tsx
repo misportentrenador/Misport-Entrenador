@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarClock, Plus } from 'lucide-react';
+import { CalendarClock, Plus, Ticket } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { usePersonaTimeline } from '../../hooks/usePersonaTimeline';
 import { MensajeCanal, MensajeDireccion } from '../../types';
@@ -11,6 +11,7 @@ import { Button } from '../../../../components/ui/Button';
 import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
 import { ReprogramarModal } from '../../../../pages/admin/agenda/ReprogramarModal';
+import { ConsumirBonoManualModal } from '../../../../pages/admin/agenda/ConsumirBonoManualModal';
 
 interface Props {
   personaId: string;
@@ -35,6 +36,7 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
   const [incidenciaForm, setIncidenciaForm] = useState(emptyIncidenciaForm);
   const [mensajeForm, setMensajeForm] = useState(emptyMensajeForm);
   const [reprogramando, setReprogramando] = useState<Reservation | null>(null);
+  const [consumiendoBono, setConsumiendoBono] = useState<Reservation | null>(null);
 
   const handleAddNota = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,6 +112,11 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
                     <CalendarClock size={14} /> Reprogramar
                   </Button>
                 )}
+                {item.reservation?.status === 'COMPLETED' && item.reservation?.bonoStatus === 'pending_regularization' && (
+                  <Button variant="ghost" className="shrink-0 py-1.5 px-3 text-xs" onClick={() => setConsumiendoBono(item.reservation!)}>
+                    <Ticket size={14} /> Consumir bono
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
@@ -118,6 +125,9 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
 
       {reprogramando && (
         <ReprogramarModal reservation={reprogramando} open onClose={() => setReprogramando(null)} />
+      )}
+      {consumiendoBono && (
+        <ConsumirBonoManualModal reservation={consumiendoBono} open onClose={() => setConsumiendoBono(null)} />
       )}
     </div>
   );

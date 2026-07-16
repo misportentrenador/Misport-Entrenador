@@ -84,6 +84,32 @@ export interface ReservationRescheduleLog {
   createdAt: number;
 }
 
+/**
+ * Origen de un BonoManualConsumptionLog — hoy solo existe 'consumo_manual'
+ * (Sprint 22); un literal (no un string libre) para que añadir un origen
+ * futuro siga siendo un cambio de tipo explícito, no un typo silencioso.
+ */
+export type BonoManualConsumptionOrigen = 'consumo_manual';
+
+/**
+ * Auditoría de consumos manuales de bono (Sprint 22) — regulariza una
+ * reserva COMPLETED que quedó con bonoStatus 'pending_regularization' por
+ * falta de saldo en el momento de completarla. `motivo` ya existe en el
+ * modelo pero es opcional y no se exige todavía: una futura versión puede
+ * pasar a exigirlo en la UI sin necesitar ningún cambio de esquema.
+ */
+export interface BonoManualConsumptionLog {
+  id: string;
+  reservationId: string;
+  bonoClienteId: string;
+  personaId: string;
+  usuarioId: string;
+  usuarioNombre: string;
+  origen: BonoManualConsumptionOrigen;
+  motivo?: string;
+  createdAt: number;
+}
+
 // Configuration for complex schedules
 export interface ScheduleRule {
   centerId: string;

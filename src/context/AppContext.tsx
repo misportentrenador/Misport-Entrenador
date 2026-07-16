@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Reservation, ScheduleRule, ReservationRescheduleLog } from '../types';
+import { User, Reservation, ScheduleRule, ReservationRescheduleLog, BonoManualConsumptionLog } from '../types';
 import { Center, Trainer, Service } from '../modules/catalog/types';
 import { MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
@@ -29,6 +29,17 @@ interface AppContextType {
    */
   reprogramarReserva: (id: string, nuevaFecha: string, nuevoInicio: string, nuevoFin: string) => { success: boolean; message?: string };
   reservationReschedules: ReservationRescheduleLog[];
+  /**
+   * Regulariza manualmente una reserva COMPLETED que quedó con
+   * bonoStatus 'pending_regularization' (Sprint 22), consumiendo el
+   * BonoCliente indicado (ya validado como compatible por quien llama).
+   * Esta función solo actualiza la reserva y audita el cambio; el
+   * descuento del propio bono lo hace el llamador vía useCRM(), porque
+   * AppContext no puede escribir ahí sin dejar el estado de CRM
+   * desincronizado (ver reprogramarReserva/CRMContext).
+   */
+  marcarBonoConsumidoManualmente: (reservationId: string, bonoClienteId: string) => { success: boolean; message?: string };
+  bonoManualConsumptions: BonoManualConsumptionLog[];
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -54,6 +65,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   // Dynamic data
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [reservationReschedules, setReservationReschedules] = useState<ReservationRescheduleLog[]>([]);
+  const [bonoManualConsumptions, setBonoManualConsumptions] = useState<BonoManualConsumptionLog[]>([]);
   const [clients, setClients] = useState<User[]>([]);
 
   // Reads the registered clients from the "DB" (passwords stripped) so the
@@ -106,6 +118,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             setReservationReschedules([]);
         }
     }
+
+    // 5. Load manual bono consumption audit log (Sprint 22)
+    const storedBonoConsumptions = localStorage.getItem(STORAGE_KEYS.bonoManualConsumptions);
+    if (storedBonoConsumptions) {
+        try {
+            setBonoManualConsumptions(JSON.parse(storedBonoConsumptions));
+        } catch (e) {
+            console.error("Failed to load bono manual consumptions, initializing empty.");
+            setBonoManualConsumptions([]);
+        }
+    }
   }, []);
 
   // Persist reservations whenever they change
@@ -120,6 +143,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         localStorage.setItem(STORAGE_KEYS.reservationReschedules, JSON.stringify(reservationReschedules));
     }
   }, [reservationReschedules]);
+
+  useEffect(() => {
+    if (bonoManualConsumptions.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.bonoManualConsumptions, JSON.stringify(bonoManualConsumptions));
+    }
+  }, [bonoManualConsumptions]);
 
   // --- AUTH ACTIONS ---
 
@@ -419,6 +448,58 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return { success: true };
   };
 
+  // Regulariza manualmente una reserva COMPLETED con bonoStatus
+  // 'pending_regularization' (Sprint 22): la propia validación de
+  // compatibilidad/saldo del bono la hace el llamador (useConsumirBonoManual,
+  // que sí tiene acceso a useCRM()) antes de invocar esto — aquí solo se
+  // valida el estado de la reserva, se marca como 'consumed', se audita el
+  // cambio (con origen preparado para un motivo futuro) y se emite el
+  // evento de dominio para que el Historial de la Ficha se entere.
+  const marcarBonoConsumidoManualmente = (
+    reservationId: string,
+    bonoClienteId: string
+  ): { success: boolean; message?: string } => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (!reservation) {
+        return { success: false, message: 'La reserva no existe.' };
+    }
+    if (reservation.status !== 'COMPLETED' || reservation.bonoStatus !== 'pending_regularization') {
+        return { success: false, message: 'Esta reserva no está pendiente de regularizar.' };
+    }
+    if (!reservation.personaId) {
+        return { success: false, message: 'La reserva no tiene una Persona vinculada.' };
+    }
+
+    setReservations(prev => {
+        const updated = prev.map(r => r.id === reservationId ? { ...r, bonoStatus: 'consumed' as const } : r);
+        localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(updated));
+        return updated;
+    });
+
+    const log: BonoManualConsumptionLog = {
+        id: createEntityId('bmc'),
+        reservationId,
+        bonoClienteId,
+        personaId: reservation.personaId,
+        usuarioId: user?.id ?? '',
+        usuarioNombre: user?.name ?? '',
+        origen: 'consumo_manual',
+        createdAt: Date.now(),
+    };
+    setBonoManualConsumptions(prev => [...prev, log]);
+
+    domainEventBus.emit({
+        type: 'BonoConsumedManually',
+        reservationId,
+        personaId: reservation.personaId,
+        bonoClienteId,
+        changedBy: { userId: user?.id ?? '', userName: user?.name ?? '' },
+        occurredAt: new Date().toISOString(),
+    });
+
+    return { success: true };
+  };
+
   const isAdmin = user?.role === 'ADMIN';
 
   return (
@@ -436,6 +517,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       getOccupancy,
       reprogramarReserva,
       reservationReschedules,
+      marcarBonoConsumidoManualmente,
+      bonoManualConsumptions,
       isAdmin,
       login,
       register,

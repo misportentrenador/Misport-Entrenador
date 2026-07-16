@@ -27,10 +27,11 @@ const emptyBonoForm = { bonoId: '', sessionsRemaining: '1', purchaseDate: new Da
 const emptyPagoForm = { date: new Date().toISOString().slice(0, 10), trainerName: '', centerName: '', service: FINANCE_SERVICES[0] as FinanceServiceName, groupDays: '1' as '1' | '2' | '3', quantity: '1' };
 
 /**
- * Información económica — Sprint 10: alta de BonoCliente y de pagos ya
- * funcionan; el consumo automático de bonos queda documentado como regla
- * oficial (ver BonoCliente en crm/types.ts) pero su implementación se
- * difiere a un Sprint dedicado.
+ * Información económica — Sprint 10: alta de BonoCliente y de pagos.
+ * El consumo automático de bonos (regla oficial, ver BonoCliente en
+ * crm/types.ts) se implementó en el Sprint 11 al completar una sesión;
+ * cuando no hay saldo suficiente, la regularización manual (Sprint 22) se
+ * hace desde la Agenda o el Historial de esta misma Ficha, no aquí.
  */
 export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
   const { bonosCliente } = useCRM();
@@ -106,7 +107,7 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Bonos</h3>
-          <span className="text-xs text-gray-500">Consumo automático: regla documentada, pendiente de un Sprint dedicado</span>
+          <span className="text-xs text-gray-500">El consumo automático se aplica al completar cada sesión</span>
         </div>
         {misBonos.length === 0 ? (
           <EmptyState icon={Wallet} message="Sin bonos registrados todavía." />

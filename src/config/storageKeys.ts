@@ -7,6 +7,7 @@ export const STORAGE_KEYS = {
   session: 'misport_session',
   reservations: 'misport_reservations',
   reservationReschedules: 'misport_reservation_reschedules',
+  bonoManualConsumptions: 'misport_bono_manual_consumptions',
   registeredUsers: 'misport_db_users',
   financeParams: 'misport_finance_params',
   agendaConfig: 'misport_agenda_config',

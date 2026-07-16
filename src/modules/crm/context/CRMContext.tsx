@@ -50,23 +50,32 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const eventos = useEntityCollection(personaEventoRepo, 'evt');
   const relaciones = useEntityCollection(relacionPersonaRepo, 'rel');
 
-  // Escucha el evento de dominio ReservationRescheduled (Sprint 21) para
-  // alimentar el timeline de la Persona — AppContext solo emite el evento,
-  // nunca escribe en el repositorio de PersonaEvento directamente, porque
-  // AppProvider está por encima de CRMProvider en el árbol y no puede ver
-  // este estado. Escribir aquí (con eventos.create, no el repo a pelo)
-  // asegura que la Ficha refleje el cambio sin necesitar recargar la
-  // página. El mismo evento queda disponible para que un futuro adaptador
-  // de Booksy/Google Calendar se suscriba sin tocar esta lógica.
+  // Escucha los eventos de dominio que afectan al timeline de la Persona
+  // (ReservationRescheduled, Sprint 21; BonoConsumedManually, Sprint 22) —
+  // AppContext solo emite el evento, nunca escribe en el repositorio de
+  // PersonaEvento directamente, porque AppProvider está por encima de
+  // CRMProvider en el árbol y no puede ver este estado. Escribir aquí (con
+  // eventos.create, no el repo a pelo) asegura que la Ficha refleje el
+  // cambio sin necesitar recargar la página. Los mismos eventos quedan
+  // disponibles para que un futuro adaptador de Booksy/Google Calendar se
+  // suscriba sin tocar esta lógica.
   useEffect(() => {
     return domainEventBus.subscribe(event => {
-      if (event.type !== 'ReservationRescheduled' || !event.personaId) return;
-      eventos.create({
-        personaId: event.personaId,
-        tipo: 'Reprogramación',
-        descripcion: `Reserva reprogramada de ${event.previous.date} ${event.previous.startTime} a ${event.next.date} ${event.next.startTime}.`,
-        fecha: event.occurredAt,
-      });
+      if (event.type === 'ReservationRescheduled' && event.personaId) {
+        eventos.create({
+          personaId: event.personaId,
+          tipo: 'Reprogramación',
+          descripcion: `Reserva reprogramada de ${event.previous.date} ${event.previous.startTime} a ${event.next.date} ${event.next.startTime}.`,
+          fecha: event.occurredAt,
+        });
+      } else if (event.type === 'BonoConsumedManually') {
+        eventos.create({
+          personaId: event.personaId,
+          tipo: 'Bono consumido manualmente',
+          descripcion: 'Se regularizó manualmente una reserva pendiente, consumiendo una sesión de bono.',
+          fecha: event.occurredAt,
+        });
+      }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventos.create]);
