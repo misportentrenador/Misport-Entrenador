@@ -11,10 +11,11 @@ interface UseSessionActionsArgs {
   onOpenNuevaReserva: (session: AgendaSession) => void;
   onOpenReprogramar: (session: AgendaSession) => void;
   onOpenConsumirBono: (session: AgendaSession) => void;
+  onOpenConfirmarAsistencia: (session: AgendaSession) => void;
 }
 
 /** Conecta el registro declarativo de acciones con la lógica real ya existente. */
-export function useSessionActions({ onOpenRegistrarPago, onOpenAnadirNota, onOpenCrearIncidencia, onOpenNuevaReserva, onOpenReprogramar, onOpenConsumirBono }: UseSessionActionsArgs) {
+export function useSessionActions({ onOpenRegistrarPago, onOpenAnadirNota, onOpenCrearIncidencia, onOpenNuevaReserva, onOpenReprogramar, onOpenConsumirBono, onOpenConfirmarAsistencia }: UseSessionActionsArgs) {
   const { cancelReservation } = useApp();
   const { handleComplete, completingIds } = useCompleteReservation();
   const navigate = useNavigate();
@@ -38,6 +39,7 @@ export function useSessionActions({ onOpenRegistrarPago, onOpenAnadirNota, onOpe
     onNuevaReserva: onOpenNuevaReserva,
     onReprogramar: onOpenReprogramar,
     onConsumirBono: onOpenConsumirBono,
+    onConfirmarAsistencia: onOpenConfirmarAsistencia,
   });
 
   return { actions, completingIds };

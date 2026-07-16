@@ -57,7 +57,7 @@ export const WeekView: React.FC<WeekViewProps> = ({ weekStart, onWeekStartChange
                 <span className="text-xs text-gray-500">{d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' })}</span>
               </div>
               <div className="p-3 space-y-2 min-h-[80px]">
-                {list.map(s => <SessionCard key={s.id} session={s} compact />)}
+                {list.map(s => <SessionCard key={s.id} session={s} compact canal="agenda_semana" />)}
                 {list.length === 0 && <p className="text-xs text-gray-700 text-center py-4">Sin sesiones</p>}
               </div>
             </div>

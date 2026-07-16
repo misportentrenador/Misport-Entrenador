@@ -31,6 +31,8 @@ Mientras el núcleo no esté consolidado, las integraciones externas reales qued
 
 **Informe de madurez (obligatorio desde el cierre del Sprint 20)**: cada informe de cierre de Sprint debe incluir una estimación razonada del porcentaje de madurez de MISPORT OS respecto al objetivo final de ser el sistema operativo completo de la empresa (ver metodología de cálculo en "Estado actual del sistema").
 
+**Informe de valor operativo (obligatorio desde el cierre del Sprint 23)**: además de la madurez, cada informe de cierre debe indicar qué porcentaje de valor operativo aporta ese Sprint respecto a la versión anterior — tiempo ahorrado, clics eliminados, tareas que ya no requieren salir de MISPORT OS. Es una métrica complementaria a la madurez: la madurez mide cuánto se ha construido del sistema completo; el valor operativo mide cuánta utilidad real gana el Director General en su día a día con lo construido hasta ahora, para no confundir "más funcionalidades" con "más utilidad".
+
 ## Visión a largo plazo: MISPORT OS como ERP completo
 
 No estamos construyendo funcionalidades sueltas: MISPORT OS es el **ERP completo de la empresa**. Todos sus módulos comparten la misma base de datos y la misma arquitectura (Party-Role para personas/organizaciones, Repository/Context por dominio, registros de acciones Open/Closed), para que ninguno quede aislado ni duplique lo que otro ya resuelve.
@@ -40,8 +42,8 @@ Módulos del ERP, con su estado actual:
 | Módulo | Estado |
 |---|---|
 | CRM | Construido (Sprints 8-12) |
-| Agenda | Construido (Sprints 15-18, 21-22) |
-| Reservas | Construido (Sprints 5, 7, 11) |
+| Agenda | Construido — registro `sessionActions` completo (Sprints 15-18, 21-23) |
+| Reservas | Construido (Sprints 5, 7, 11, 23 — asistencia) |
 | Bonos | Construido — consumo automático (Sprint 11) y regularización manual (Sprint 22) |
 | Finanzas | Construido, parcial (Sprints 6-7) |
 | Facturación | Construido, fase 1 (Sprint 19) |
@@ -59,9 +61,9 @@ Módulos del ERP, con su estado actual:
 
 Cada módulo futuro se diseña cuando le corresponda por prioridad, verificando siempre que encaja en la arquitectura ya existente sin necesitar romperla.
 
-### Madurez estimada del sistema (2026-07-15, tras el Sprint 22): ~38%
+### Madurez estimada del sistema (2026-07-16, tras el Sprint 23): ~38%
 
-Estimación cualitativa, no una métrica exacta: media ponderada del grado de completitud de cada uno de los 17 módulos del ERP (CRM ~90%, Agenda ~95% —sube tras el Sprint 22: de sus 9 acciones rápidas del registro `sessionActions` solo queda `confirmar_asistencia` sin implementar—, Reservas ~90%, Catálogo ~90%, Bonos ~85% —sube tras cerrar el ciclo de vida del consumo (automático + regularización manual)—, Finanzas ~60%, Cuadros de mando ~50%, Facturación ~40%, Tesorería ~25%, Integraciones externas ~20%, IA ~5%, y Proyectos institucionales/Corporate Wellness/Trail Running/RRHH/Documentación/Automatizaciones en 0%). El movimiento frente al Sprint 21 (~38%) es marginal — la media ponderada de 17 módulos absorbe bien un cambio en dos de ellos. Se recalculará al cierre de cada Sprint futuro con el mismo criterio, para que la cifra sea comparable entre informes.
+Estimación cualitativa, no una métrica exacta: media ponderada del grado de completitud de cada uno de los 17 módulos del ERP (CRM ~90%, Agenda ~97% —el registro `sessionActions` queda completo: las 10 acciones rápidas de negocio están implementadas; solo queda `whatsapp`, que depende de una integración externa, no de lógica de negocio—, Reservas ~92% —sube ligeramente por la asistencia—, Catálogo ~90%, Bonos ~85%, Finanzas ~60%, Cuadros de mando ~50%, Facturación ~40%, Tesorería ~25%, Integraciones externas ~20%, IA ~5%, y Proyectos institucionales/Corporate Wellness/Trail Running/RRHH/Documentación/Automatizaciones en 0%). El movimiento frente al Sprint 22 (~38%) vuelve a ser marginal — es el patrón esperado de esta metodología: cada Sprint aporta una mejora pequeña sobre la media ponderada de 17 módulos, no un salto grande de golpe. Se recalculará al cierre de cada Sprint futuro con el mismo criterio, para que la cifra sea comparable entre informes.
 
 ---
 
@@ -76,7 +78,7 @@ Estimación cualitativa, no una métrica exacta: media ponderada del grado de co
 | Finanzas | Estable, conectado al Catálogo | Sprint 6, 7 |
 | CRM (ficha única, buscador, filtros) | Estable — Release 0.3 cerrada | Sprint 8-12 |
 | Dashboard (Inicio) | Estable, con alertas operativas/comerciales | Sprint 13-14 |
-| Agenda Ejecutiva | Estable — centro operativo diario, 9 acciones rápidas (incluye reprogramar reserva y consumir bono manual), integración de calendarios, eventos de dominio `ReservationRescheduled`/`BonoConsumedManually` listos para futuras sincronizaciones | Sprint 15-18, 21-22 |
+| Agenda Ejecutiva | Estable — centro operativo diario, 10 acciones rápidas (registro `sessionActions` completo: incluye reprogramar reserva, consumir bono manual y confirmar asistencia con 4 estados), integración de calendarios, eventos de dominio `ReservationRescheduled`/`BonoConsumedManually`/`AttendanceUpdated` listos para futuras sincronizaciones, KPIs, recordatorios, informes y automatizaciones | Sprint 15-18, 21-23 |
 | Rendimiento/infraestructura técnica | Reforzada (bundle -92%, fix login, a11y) | Sesión de hardening 2026-07-15 |
 | Integraciones externas reales | Arquitectura lista; Google Calendar en modo lectura (credenciales de prueba) | Sprint 18 |
 | Facturación | Fase 1 — factura en PDF, numeración correlativa única | Sprint 19 |
@@ -87,13 +89,14 @@ Estimación cualitativa, no una métrica exacta: media ponderada del grado de co
 
 ## Sprint actual
 
-Ninguno abierto. El **Sprint 22** (Consumir bono manual desde la Agenda) está implementado y probado: regulariza una reserva `COMPLETED` que quedó con `bonoStatus: 'pending_regularization'` por falta de saldo al completarla, dejando elegir entre los `BonoCliente` de la Persona compatibles con el servicio (mismo criterio y desempate que el consumo automático del Sprint 11 — nunca un bono no compatible). No genera ningún `FinanceEntry` adicional (el registro económico ya se creó al completar la sesión). Queda auditado con usuario, fecha/hora y `origen: 'consumo_manual'` (`BonoManualConsumptionLog`, con un campo `motivo` ya presente pero opcional, preparado para exigirse en una futura versión sin tocar el modelo de datos) y emite un evento de dominio interno (`BonoConsumedManually`) al que el CRM ya se suscribe para alimentar el Historial de la Ficha. Una única implementación (`ConsumirBonoManualModal.tsx`) reutilizable desde la vista diaria y semanal de la Agenda y desde el Historial de la Ficha del cliente. De paso, se corrigió documentación desactualizada que describía el consumo automático de bonos como "pendiente de implementar" cuando en realidad está construido desde el Sprint 11.
+Ninguno abierto. El **Sprint 23** (Confirmar asistencia desde la Agenda) está implementado y probado: registra el estado de asistencia de una reserva con cuatro valores diferenciados (`pendiente` / `asistio` / `no_asistio` / `justificada`, tipo `AsistenciaEstado`), libremente asignable en cualquier momento, disponible para reservas `CONFIRMED` y `COMPLETED` (no para `CANCELLED`). Cada cambio queda auditado en un log estructurado (`AsistenciaLog`) con estado anterior/nuevo, usuario, fecha/hora y el **canal** desde el que se hizo el cambio (`agenda_dia` / `agenda_semana` / `ficha_cliente`), y emite un evento de dominio (`AttendanceUpdated`) al que el CRM ya se suscribe para el Historial de la Ficha — el mismo evento queda listo para que futuros módulos de KPIs, recordatorios automáticos, informes, automatizaciones o IA se suscriban sin modificar esta lógica. Independencia absoluta y verificada por prueba: ningún cambio de asistencia toca `bonosCliente`, `FinanceEntry`, `Factura`, `CobroFactura`, `ReservationRescheduleLog` ni `BonoManualConsumptionLog`. Una única implementación (`AsistenciaModal.tsx`) reutilizable desde la vista diaria y semanal de la Agenda y desde el Historial de la Ficha del cliente. Con este Sprint, el registro `sessionActions` de la Agenda queda completo (10 acciones de negocio; solo `whatsapp` queda pendiente, y depende de una integración externa, no de lógica de negocio).
 
 ---
 
 ## Backlog general (no priorizado por Sprint todavía)
 
-- Acciones rápidas de Agenda pendientes: `confirmar_asistencia`. (`crear_incidencia` completada en el Sprint 17; `nueva_reserva` completada en el Sprint 18; `reprogramar` completada en el Sprint 21; `consumir_bono` manual completada en el Sprint 22.)
+- Acciones rápidas de Agenda: **registro `sessionActions` completo** (`crear_incidencia` Sprint 17; `nueva_reserva` Sprint 18; `reprogramar` Sprint 21; `consumir_bono` manual Sprint 22; `confirmar_asistencia` Sprint 23). Solo queda `whatsapp`, reservada para cuando se apruebe esa integración externa (ver más abajo) — no es una acción de negocio pendiente.
+- Estadísticas de asistencia/absentismo y automatizaciones (recordatorios, informes, KPIs) sobre `AsistenciaLog` y el evento `AttendanceUpdated` (Sprint 23) — arquitectura ya preparada, candidato futuro cuando corresponda por prioridad.
 - Conexión real de Google Calendar (arquitectura, adaptador y modo lectura ya implementados y probados con credenciales de prueba en el Sprint 18) — **bloqueada solo por la creación de credenciales reales en Google Cloud por parte del Director General**, ver `Docs definitivos/2026-07-15-integracion-google-calendar.md`.
 - Sincronización bidireccional de Google Calendar (crear/editar eventos desde MISPORT) — decisión de negocio explícitamente pendiente, no técnica.
 - Integración WhatsApp (comunicación) — bloqueada hasta decisión de negocio (proveedor, coste).
@@ -117,7 +120,7 @@ Ninguno abierto. El **Sprint 22** (Consumir bono manual desde la Agenda) está i
 - Cualquier integración externa depende de: (a) decisión estratégica explícita (crear proyecto/credenciales en la plataforma externa), (b) alta de credenciales/API keys (nunca en código, vía variables de entorno), (c) posible coste recurrente a aprobar.
 - Facturación (fase 1, Sprint 19) y Cobros (fase 1, Sprint 20): completadas.
 - Futuras fases de Tesorería (cobros parciales, formas de pago, rectificativas, facturación electrónica, integración bancaria): decisión de negocio pendiente para cada una cuando corresponda, sobre una arquitectura ya preparada.
-- `confirmar_asistencia`: decisión de negocio ya tomada (registro informativo, no consume bono ni genera cargo; independiente de "Marcar completada") — pendiente de implementar en el Sprint 23.
+- `confirmar_asistencia`: completada en el Sprint 23 (4 estados, auditoría con canal de origen, evento de dominio `AttendanceUpdated`, independencia absoluta y verificada respecto a bonos/cobros/facturación).
 - `reprogramar`: completada en el Sprint 21 (valida disponibilidad/capacidad, conserva historial y trazabilidad, auditoría con horario anterior/nuevo, evento de dominio `ReservationRescheduled`).
 - `consumir_bono` manual: completada en el Sprint 22 (solo bonos compatibles con el servicio, sin FinanceEntry adicional, auditoría con origen `consumo_manual` y motivo opcional preparado para el futuro, evento de dominio `BonoConsumedManually`).
 
@@ -125,11 +128,12 @@ Ninguno abierto. El **Sprint 22** (Consumir bono manual desde la Agenda) está i
 
 ## Próximos 10 Sprints previstos
 
-Reordenados el 2026-07-15 tras el cierre del Sprint 22, según el orden de prioridad vigente (1. completar flujos internos, 2. consolidar Agenda/CRM/Finanzas/Facturación, 3. finalizar acciones rápidas pendientes, 4. optimizar la experiencia diaria, 5. integraciones reales — deliberadamente en espera hasta consolidar el núcleo).
+Reordenados el 2026-07-16 tras el cierre del Sprint 23, según el orden de prioridad vigente (1. completar flujos internos, 2. consolidar Agenda/CRM/Finanzas/Facturación, 3. finalizar acciones rápidas pendientes, 4. optimizar la experiencia diaria, 5. integraciones reales — deliberadamente en espera hasta consolidar el núcleo).
+
+Con el Sprint 23 cerrado, la **prioridad 3 (acciones rápidas pendientes) queda completa** — no vuelve a aparecer en esta lista salvo que surja una acción nueva.
 
 | # | Sprint | Prioridad que satisface | Bloqueo |
 |---|---|---|---|
-| 23 | Última acción rápida pendiente de la Agenda: `confirmar_asistencia` | 3 | Ninguno — decisión de negocio ya tomada (registro informativo Sí/No, independiente de "Marcar completada") |
 | 24 | Tesorería fase 2: cobros parciales + formas de pago (efectivo/transferencia/tarjeta) | 1 y 2 (consolidar Facturación) | Requiere confirmar si el importe pendiente puede quedar parcialmente cobrado sin cambiar el estado de la factura |
 | 25 | Consolidación de Finanzas: unificar el "Registro" general (`FinancePanel`) con la vista por cliente, evitar duplicidad de flujos de alta de pagos | 2 | Ninguno — revisión técnica de un flujo ya construido |
 | 26 | Framework de pruebas automatizado versionado + auditoría de accesibilidad ampliada | Ciclo de mantenimiento del 20% técnico, refuerza la consolidación del núcleo | Requiere tu decisión sobre herramienta de pruebas |
@@ -139,7 +143,7 @@ Reordenados el 2026-07-15 tras el cierre del Sprint 22, según el orden de prior
 | 30 | **(en espera)** Integración WhatsApp | 5 | Pospuesto — además bloqueado por decisión de proveedor y coste |
 | 31 | **(en espera)** Módulo de Proyectos institucionales (Ayuntamientos y similares) | 5 | Pospuesto — además bloqueado por definir el modelo de negocio |
 
-**Recomendación de secuencia**: Sprint 23 (`confirmar_asistencia`) — cierra por completo el registro `sessionActions` de la Agenda, es la última pieza de la prioridad 3 y no tiene ningún bloqueo pendiente: la decisión de negocio (registro informativo, independiente de completar) ya está tomada.
+**Recomendación de secuencia**: Sprint 24 (Tesorería fase 2 — cobros parciales y formas de pago) — es el siguiente paso natural de "consolidar Facturación" (prioridad 2), sobre una arquitectura (`CobroFactura`) ya diseñada precisamente para esto desde el Sprint 20. Requiere una decisión de negocio puntual (si el importe pendiente puede quedar parcialmente cobrado sin cambiar el estado de la factura), que presentaré junto al diseño completo.
 
 Este orden se revisará automáticamente al cierre de cada Sprint, por si el estado del proyecto cambia la prioridad.
 
@@ -157,3 +161,4 @@ Este orden se revisará automáticamente al cierre de cada Sprint, por si el est
 - **2026-07-15**: cerrado el Sprint 21 — Reprogramar reserva desde la Agenda: valida disponibilidad y capacidad del nuevo horario (reutilizando `computeTimeSlots`, extraído del Booking Wizard, y `getOccupancy`), modifica la misma reserva sin cancelarla ni crear una nueva (conserva bono/pagos/incidencias/notas), registra auditoría estructurada con horario anterior y nuevo (`ReservationRescheduleLog`) y emite un evento de dominio interno (`ReservationRescheduled`, `src/core/events/domainEvents.ts`) al que el propio CRM ya se suscribe (para alimentar el Historial de la Ficha) y al que las futuras integraciones de Booksy/Google Calendar podrán suscribirse sin tocar esta lógica. Una única implementación (`ReprogramarModal.tsx`) utilizable desde la vista diaria y semanal de la Agenda y desde la Ficha del cliente. Madurez del sistema: ~38%. Se propone el Sprint 22 (terminar `confirmar_asistencia` y `consumir_bono` manual) como siguiente.
 - **2026-07-15**: presentado el diseño funcional completo de las dos acciones rápidas pendientes (`confirmar_asistencia` y `consumir_bono` manual) con flujo de usuario, reglas de negocio, casos excepcionales, impacto, riesgos, pruebas y criterios de aceptación; recomendado empezar por `consumir_bono` manual por resolver un aviso operativo ("Pendiente de regularizar") que hoy no tiene ninguna acción que lo cierre. Aprobadas las recomendaciones (no-show de `confirmar_asistencia` como registro informativo sin efectos económicos; independencia entre "Confirmar asistencia" y "Marcar completada"; compatibilidad estricta por servicio en `consumir_bono` manual, igual que el consumo automático) más un requisito añadido: auditar todo consumo manual con usuario, fecha, hora y origen "Consumo manual", dejando preparado (no exigido todavía) un campo de motivo futuro sin cambiar el modelo de datos.
 - **2026-07-15**: cerrado el Sprint 22 — Consumir bono manual desde la Agenda: regulariza una reserva `COMPLETED` con `bonoStatus: 'pending_regularization'`, reutilizando el mismo criterio de compatibilidad y desempate que el consumo automático (Sprint 11); no genera ningún `FinanceEntry` adicional; auditoría estructurada con usuario, fecha/hora y `origen: 'consumo_manual'` (`BonoManualConsumptionLog`, con `motivo` ya presente pero opcional); evento de dominio `BonoConsumedManually` al que el CRM ya se suscribe para el Historial de la Ficha. Una única implementación (`ConsumirBonoManualModal.tsx`) utilizable desde la vista diaria y semanal de la Agenda y desde la Ficha del cliente. De paso, corregida documentación desactualizada que describía el consumo automático de bonos como pendiente de implementar. Madurez del sistema: ~38% (sin cambio significativo). Se propone el Sprint 23 (`confirmar_asistencia`, última acción rápida pendiente de la Agenda) como siguiente.
+- **2026-07-16**: presentado y aprobado el diseño técnico completo del Sprint 23 (`confirmar_asistencia`, 4 estados: Pendiente/Asistió/No asistió/Justificada), con 3 requisitos añadidos: auditar también el canal de origen (Agenda Día/Semana/Ficha), preparar el evento de dominio para futuros módulos de KPIs/recordatorios/informes/automatizaciones/IA, y mantener independencia absoluta entre asistencia, cancelación, bonos, cobros y facturación. Cerrado el Sprint 23: nuevo tipo `AsistenciaEstado` (campo opcional en `Reservation`, sin migración de datos, con `getAsistencia()` como único punto de verdad del valor por defecto), auditoría estructurada `AsistenciaLog` con estado anterior/nuevo, canal, usuario y fecha/hora, evento de dominio `AttendanceUpdated` al que el CRM ya se suscribe para el Historial de la Ficha. Verificado por prueba dedicada que ningún cambio de asistencia afecta a bonos, cobros, facturación, reprogramaciones ni consumos manuales de bono. Una única implementación (`AsistenciaModal.tsx`) utilizable desde la vista diaria y semanal de la Agenda y desde la Ficha del cliente. Con este cierre, el registro `sessionActions` de la Agenda queda completo (10 acciones de negocio); solo `whatsapp` queda pendiente, bloqueada por una integración externa, no por lógica de negocio. Madurez del sistema: ~38% (sin cambio significativo — patrón esperado de esta metodología incremental). Añadido, a partir de este cierre, el requisito de incluir también un **porcentaje de valor operativo aportado** en cada informe de cierre de Sprint (tiempo ahorrado, clics eliminados, tareas que ya no requieren salir de MISPORT OS), complementario a la madurez. Se propone el Sprint 24 (Tesorería fase 2 — cobros parciales y formas de pago) como siguiente.

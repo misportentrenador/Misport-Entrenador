@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Clock, ExternalLink } from 'lucide-react';
 import { useApp } from '../../../context/AppContext';
 import { Badge } from '../../../components/ui/Badge';
-import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE } from '../../../shared/lib/reservationLabels';
+import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE, ASISTENCIA_ESTADO_LABEL, ASISTENCIA_ESTADO_TONE, getAsistencia } from '../../../shared/lib/reservationLabels';
+import { AsistenciaCanal } from '../../../types';
 import { AgendaSession } from './AgendaSession';
 import { useSessionActions } from './useSessionActions';
 import { RegistrarPagoModal } from './RegistrarPagoModal';
@@ -11,13 +12,16 @@ import { CrearIncidenciaModal } from './CrearIncidenciaModal';
 import { NuevaReservaModal } from './NuevaReservaModal';
 import { ReprogramarModal } from './ReprogramarModal';
 import { ConsumirBonoManualModal } from './ConsumirBonoManualModal';
+import { AsistenciaModal } from './AsistenciaModal';
 
 interface SessionCardProps {
   session: AgendaSession;
   compact?: boolean;
+  /** Día o semana — para auditar desde qué vista de la Agenda se confirma la asistencia (Sprint 23). */
+  canal: Extract<AsistenciaCanal, 'agenda_dia' | 'agenda_semana'>;
 }
 
-type ActiveModal = 'registrar_pago' | 'anadir_nota' | 'crear_incidencia' | 'nueva_reserva' | 'reprogramar' | 'consumir_bono' | null;
+type ActiveModal = 'registrar_pago' | 'anadir_nota' | 'crear_incidencia' | 'nueva_reserva' | 'reprogramar' | 'consumir_bono' | 'confirmar_asistencia' | null;
 
 const EXTERNAL_ORIGIN_LABEL: Record<string, string> = {
   google_calendar: 'Google Calendar',
@@ -26,7 +30,7 @@ const EXTERNAL_ORIGIN_LABEL: Record<string, string> = {
   booksy: 'Booksy',
 };
 
-export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) => {
+export const SessionCard: React.FC<SessionCardProps> = ({ session, compact, canal }) => {
   const { centers, trainers } = useApp();
   const [activeModal, setActiveModal] = useState<ActiveModal>(null);
   const { actions, completingIds } = useSessionActions({
@@ -36,6 +40,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
     onOpenNuevaReserva: () => setActiveModal('nueva_reserva'),
     onOpenReprogramar: () => setActiveModal('reprogramar'),
     onOpenConsumirBono: () => setActiveModal('consumir_bono'),
+    onOpenConfirmarAsistencia: () => setActiveModal('confirmar_asistencia'),
   });
 
   const r = session.reservation;
@@ -76,6 +81,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
         <div className="flex items-center gap-1.5">
           <Badge tone={RESERVATION_STATUS_TONE[r.status]}>{RESERVATION_STATUS_LABEL[r.status]}</Badge>
           {r.bonoStatus === 'pending_regularization' && <Badge tone="danger">Pendiente de regularizar</Badge>}
+          {getAsistencia(r) !== 'pendiente' && <Badge tone={ASISTENCIA_ESTADO_TONE[getAsistencia(r)]}>{ASISTENCIA_ESTADO_LABEL[getAsistencia(r)]}</Badge>}
         </div>
       </div>
       <p className="text-white text-sm font-medium mt-1 truncate">{center?.name ?? '—'}</p>
@@ -106,6 +112,7 @@ export const SessionCard: React.FC<SessionCardProps> = ({ session, compact }) =>
       <NuevaReservaModal session={session} open={activeModal === 'nueva_reserva'} onClose={() => setActiveModal(null)} />
       <ReprogramarModal reservation={r} open={activeModal === 'reprogramar'} onClose={() => setActiveModal(null)} />
       <ConsumirBonoManualModal reservation={r} open={activeModal === 'consumir_bono'} onClose={() => setActiveModal(null)} />
+      <AsistenciaModal reservation={r} canal={canal} open={activeModal === 'confirmar_asistencia'} onClose={() => setActiveModal(null)} />
     </div>
   );
 };

@@ -4,7 +4,7 @@ import { useApp } from '../../context/AppContext';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Badge } from '../../components/ui/Badge';
 import { useCompleteReservation } from '../../hooks/useCompleteReservation';
-import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE } from '../../shared/lib/reservationLabels';
+import { RESERVATION_STATUS_LABEL, RESERVATION_STATUS_TONE, ASISTENCIA_ESTADO_LABEL, ASISTENCIA_ESTADO_TONE, getAsistencia } from '../../shared/lib/reservationLabels';
 
 export const ReservasPage: React.FC = () => {
   const { reservations, centers, trainers } = useApp();
@@ -91,6 +91,7 @@ export const ReservasPage: React.FC = () => {
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge tone={RESERVATION_STATUS_TONE[r.status]}>{RESERVATION_STATUS_LABEL[r.status]}</Badge>
                         {r.bonoStatus === 'pending_regularization' && <Badge tone="danger">Pendiente de regularizar</Badge>}
+                        {getAsistencia(r) !== 'pendiente' && <Badge tone={ASISTENCIA_ESTADO_TONE[getAsistencia(r)]}>{ASISTENCIA_ESTADO_LABEL[getAsistencia(r)]}</Badge>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-right">

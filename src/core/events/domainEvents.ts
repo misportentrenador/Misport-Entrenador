@@ -1,17 +1,21 @@
+import { AsistenciaEstado, AsistenciaCanal } from '../../types';
+
 /**
  * Bus de eventos internos de dominio (Sprint 21) — mecanismo mínimo para
  * que una acción de negocio (reprogramar una reserva, consumir un bono
- * manualmente, y las que vengan después) emita un hecho consumible por
- * quien lo necesite, sin acoplar quién lo emite a quién lo escucha.
+ * manualmente, confirmar asistencia, y las que vengan después) emita un
+ * hecho consumible por quien lo necesite, sin acoplar quién lo emite a
+ * quién lo escucha.
  *
  * Hoy ya tiene un listener real: CRMContext se suscribe para alimentar el
  * Historial de la Ficha (necesario porque AppProvider está por encima de
  * CRMProvider en el árbol y no puede llamar a useCRM() directamente). Está
- * pensado también para las futuras integraciones con Google Calendar,
- * Booksy u otros proveedores (Sprint 18): cuando se apruebe la
- * sincronización de salida, el adaptador correspondiente se suscribe aquí
- * y empuja el cambio al proveedor externo — sin tocar la lógica de negocio
- * que emite el evento.
+ * pensado también para: (a) las futuras integraciones con Google Calendar,
+ * Booksy u otros proveedores (Sprint 18) — el adaptador correspondiente se
+ * suscribe aquí y empuja el cambio al proveedor externo; (b) futuros
+ * módulos de KPIs, recordatorios automáticos, informes, automatizaciones e
+ * IA (Sprint 23) que necesiten reaccionar a cambios de asistencia — todos
+ * sin tocar la lógica de negocio que emite el evento.
  */
 export interface ReservationRescheduledEvent {
   type: 'ReservationRescheduled';
@@ -41,8 +45,29 @@ export interface BonoConsumedManuallyEvent {
   occurredAt: string; // ISO datetime
 }
 
+/**
+ * Cambio de asistencia de una reserva (Sprint 23) — se emite en cada
+ * cambio, no solo al marcar "No asistió", para que un futuro suscriptor
+ * (KPIs, recordatorios, informes, automatizaciones, IA) tenga el historial
+ * completo de transiciones sin tener que reconstruirlo de otra forma.
+ * `canal` identifica desde dónde se hizo el cambio (útil para analizar el
+ * uso real del sistema, no solo para auditoría).
+ */
+export interface AttendanceUpdatedEvent {
+  type: 'AttendanceUpdated';
+  reservationId: string;
+  personaId: string | null;
+  centerId: string;
+  serviceId: string;
+  previous: AsistenciaEstado;
+  next: AsistenciaEstado;
+  canal: AsistenciaCanal;
+  changedBy: { userId: string; userName: string };
+  occurredAt: string; // ISO datetime
+}
+
 // Únelo aquí cuando se añadan más tipos de evento de dominio.
-export type DomainEvent = ReservationRescheduledEvent | BonoConsumedManuallyEvent;
+export type DomainEvent = ReservationRescheduledEvent | BonoConsumedManuallyEvent | AttendanceUpdatedEvent;
 
 type DomainEventListener<E extends DomainEvent = DomainEvent> = (event: E) => void;
 

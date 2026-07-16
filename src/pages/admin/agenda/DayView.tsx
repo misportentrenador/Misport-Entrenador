@@ -41,7 +41,7 @@ export const DayView: React.FC<DayViewProps> = ({ day, onDayChange, sessions }) 
         <div className="divide-y divide-gray-800">
           {daySessions.map(s => (
             <div key={s.id} className="p-4">
-              <SessionCard session={s} />
+              <SessionCard session={s} canal="agenda_dia" />
             </div>
           ))}
           {daySessions.length === 0 && (

@@ -62,6 +62,49 @@ export interface Reservation {
    * aplica (p. ej. personaId null).
    */
   bonoStatus?: 'consumed' | 'pending_regularization';
+  /**
+   * Asistencia (Sprint 23) — informativo, independiente de `status`,
+   * `bonoStatus`, cobros y facturación (ninguno de esos sistemas lee ni
+   * escribe este campo). Opcional para no exigir una migración de datos:
+   * las reservas ya existentes sin este campo se tratan como 'pendiente'
+   * (ver `getAsistencia` en shared/lib/reservationLabels.ts) — esa función
+   * es la única fuente de verdad sobre el valor por defecto.
+   */
+  asistencia?: AsistenciaEstado;
+}
+
+/**
+ * Los cuatro estados de asistencia (Sprint 23) — un literal, no un
+ * booleano ni un string libre, para que "Justificada" no se pueda
+ * confundir nunca con "No asistió" en ningún filtro o informe futuro.
+ * Libremente asignable en cualquier orden (no es una máquina de estados
+ * secuencial): se puede pasar de 'pendiente' a 'justificada' directamente.
+ */
+export type AsistenciaEstado = 'pendiente' | 'asistio' | 'no_asistio' | 'justificada';
+
+/**
+ * Canal desde el que se realizó un cambio de asistencia (Sprint 23) — para
+ * auditoría y para analizar el uso real del sistema (¿se usa más desde la
+ * vista diaria, la semanal o la Ficha del cliente?).
+ */
+export type AsistenciaCanal = 'agenda_dia' | 'agenda_semana' | 'ficha_cliente';
+
+/**
+ * Auditoría de cambios de asistencia (Sprint 23) — un registro por cada
+ * cambio (no solo el último estado), para poder reconstruir el historial
+ * completo y alimentar futuras estadísticas de asistencia/absentismo sin
+ * añadir ni modificar ningún campo del modelo cuando llegue ese Sprint.
+ */
+export interface AsistenciaLog {
+  id: string;
+  reservationId: string;
+  personaId: string | null;
+  estadoAnterior: AsistenciaEstado;
+  estadoNuevo: AsistenciaEstado;
+  canal: AsistenciaCanal;
+  usuarioId: string;
+  usuarioNombre: string;
+  createdAt: number;
 }
 
 /**

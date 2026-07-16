@@ -1,4 +1,4 @@
-import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote, AlertTriangle, CalendarPlus, CalendarClock, Ticket } from 'lucide-react';
+import { LucideIcon, CheckCircle2, XCircle, IdCard, Wallet, StickyNote, AlertTriangle, CalendarPlus, CalendarClock, Ticket, UserCheck } from 'lucide-react';
 import { AgendaSession } from './AgendaSession';
 
 /**
@@ -10,8 +10,7 @@ import { AgendaSession } from './AgendaSession';
  * de un calendario externo (Sprint 18) es de solo lectura, sin acciones.
  *
  * Claves reservadas para Sprints futuros (no implementadas: dependen de
- * lógica de negocio o integraciones que todavía no existen):
- * 'whatsapp' | 'confirmar_asistencia'.
+ * integraciones que todavía no existen): 'whatsapp'.
  */
 export interface SessionAction {
   key: string;
@@ -32,9 +31,10 @@ interface BuildSessionActionsArgs {
   onNuevaReserva: (session: AgendaSession) => void;
   onReprogramar: (session: AgendaSession) => void;
   onConsumirBono: (session: AgendaSession) => void;
+  onConfirmarAsistencia: (session: AgendaSession) => void;
 }
 
-export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota, onCrearIncidencia, onNuevaReserva, onReprogramar, onConsumirBono }: BuildSessionActionsArgs): SessionAction[] {
+export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegistrarPago, onAnadirNota, onCrearIncidencia, onNuevaReserva, onReprogramar, onConsumirBono, onConfirmarAsistencia }: BuildSessionActionsArgs): SessionAction[] {
   return [
     {
       key: 'completar',
@@ -107,6 +107,14 @@ export function buildSessionActions({ onComplete, onCancel, onViewFicha, onRegis
       variant: 'ghost',
       isAvailable: (s) => s.origin === 'misport' && s.reservation?.status === 'COMPLETED' && s.reservation?.bonoStatus === 'pending_regularization',
       onSelect: onConsumirBono,
+    },
+    {
+      key: 'confirmar_asistencia',
+      label: 'Confirmar asistencia',
+      icon: UserCheck,
+      variant: 'ghost',
+      isAvailable: (s) => s.origin === 'misport' && s.reservation?.status !== 'CANCELLED',
+      onSelect: onConfirmarAsistencia,
     },
   ];
 }

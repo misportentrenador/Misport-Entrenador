@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CalendarClock, Plus, Ticket } from 'lucide-react';
+import { CalendarClock, Plus, Ticket, UserCheck } from 'lucide-react';
 import { useCRM } from '../../context/CRMContext';
 import { usePersonaTimeline } from '../../hooks/usePersonaTimeline';
 import { MensajeCanal, MensajeDireccion } from '../../types';
@@ -12,6 +12,7 @@ import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
 import { ReprogramarModal } from '../../../../pages/admin/agenda/ReprogramarModal';
 import { ConsumirBonoManualModal } from '../../../../pages/admin/agenda/ConsumirBonoManualModal';
+import { AsistenciaModal } from '../../../../pages/admin/agenda/AsistenciaModal';
 
 interface Props {
   personaId: string;
@@ -37,6 +38,7 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
   const [mensajeForm, setMensajeForm] = useState(emptyMensajeForm);
   const [reprogramando, setReprogramando] = useState<Reservation | null>(null);
   const [consumiendoBono, setConsumiendoBono] = useState<Reservation | null>(null);
+  const [confirmandoAsistencia, setConfirmandoAsistencia] = useState<Reservation | null>(null);
 
   const handleAddNota = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,6 +119,11 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
                     <Ticket size={14} /> Consumir bono
                   </Button>
                 )}
+                {item.reservation && item.reservation.status !== 'CANCELLED' && (
+                  <Button variant="ghost" className="shrink-0 py-1.5 px-3 text-xs" onClick={() => setConfirmandoAsistencia(item.reservation!)}>
+                    <UserCheck size={14} /> Confirmar asistencia
+                  </Button>
+                )}
               </li>
             ))}
           </ul>
@@ -128,6 +135,9 @@ export const HistorialSection: React.FC<Props> = ({ personaId }) => {
       )}
       {consumiendoBono && (
         <ConsumirBonoManualModal reservation={consumiendoBono} open onClose={() => setConsumiendoBono(null)} />
+      )}
+      {confirmandoAsistencia && (
+        <AsistenciaModal reservation={confirmandoAsistencia} canal="ficha_cliente" open onClose={() => setConfirmandoAsistencia(null)} />
       )}
     </div>
   );

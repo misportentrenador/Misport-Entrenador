@@ -10,6 +10,7 @@ import {
 } from '../data/repositories';
 import { useEntityCollection } from '../../../shared/hooks/useEntityCollection';
 import { domainEventBus } from '../../../core/events/domainEvents';
+import { ASISTENCIA_ESTADO_LABEL } from '../../../shared/lib/reservationLabels';
 
 type EntityBinding<T extends Entity & Timestamps> = ReturnType<typeof useEntityCollection<T>>;
 
@@ -51,14 +52,15 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const relaciones = useEntityCollection(relacionPersonaRepo, 'rel');
 
   // Escucha los eventos de dominio que afectan al timeline de la Persona
-  // (ReservationRescheduled, Sprint 21; BonoConsumedManually, Sprint 22) —
-  // AppContext solo emite el evento, nunca escribe en el repositorio de
-  // PersonaEvento directamente, porque AppProvider está por encima de
-  // CRMProvider en el árbol y no puede ver este estado. Escribir aquí (con
-  // eventos.create, no el repo a pelo) asegura que la Ficha refleje el
-  // cambio sin necesitar recargar la página. Los mismos eventos quedan
-  // disponibles para que un futuro adaptador de Booksy/Google Calendar se
-  // suscriba sin tocar esta lógica.
+  // (ReservationRescheduled, Sprint 21; BonoConsumedManually y
+  // AttendanceUpdated, Sprint 22-23) — AppContext solo emite el evento,
+  // nunca escribe en el repositorio de PersonaEvento directamente, porque
+  // AppProvider está por encima de CRMProvider en el árbol y no puede ver
+  // este estado. Escribir aquí (con eventos.create, no el repo a pelo)
+  // asegura que la Ficha refleje el cambio sin necesitar recargar la
+  // página. Los mismos eventos quedan disponibles para que futuros
+  // adaptadores (Booksy/Google Calendar) o módulos (KPIs, recordatorios,
+  // informes, automatizaciones, IA) se suscriban sin tocar esta lógica.
   useEffect(() => {
     return domainEventBus.subscribe(event => {
       if (event.type === 'ReservationRescheduled' && event.personaId) {
@@ -73,6 +75,13 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           personaId: event.personaId,
           tipo: 'Bono consumido manualmente',
           descripcion: 'Se regularizó manualmente una reserva pendiente, consumiendo una sesión de bono.',
+          fecha: event.occurredAt,
+        });
+      } else if (event.type === 'AttendanceUpdated' && event.personaId) {
+        eventos.create({
+          personaId: event.personaId,
+          tipo: 'Asistencia',
+          descripcion: `Asistencia actualizada: ${ASISTENCIA_ESTADO_LABEL[event.previous]} → ${ASISTENCIA_ESTADO_LABEL[event.next]}.`,
           fecha: event.occurredAt,
         });
       }

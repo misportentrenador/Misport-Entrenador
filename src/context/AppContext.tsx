@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { User, Reservation, ScheduleRule, ReservationRescheduleLog, BonoManualConsumptionLog } from '../types';
+import { User, Reservation, ScheduleRule, ReservationRescheduleLog, BonoManualConsumptionLog, AsistenciaEstado, AsistenciaCanal, AsistenciaLog } from '../types';
 import { Center, Trainer, Service } from '../modules/catalog/types';
 import { MOCK_ADMIN_USER, SCHEDULE_RULES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
@@ -40,6 +40,15 @@ interface AppContextType {
    */
   marcarBonoConsumidoManualmente: (reservationId: string, bonoClienteId: string) => { success: boolean; message?: string };
   bonoManualConsumptions: BonoManualConsumptionLog[];
+  /**
+   * Fija el estado de asistencia de una reserva (Sprint 23) — informativo,
+   * independiente de `status`, `bonoStatus`, cobros y facturación; nunca
+   * los modifica ni los consulta. Libremente asignable en cualquier orden
+   * (no es una máquina de estados secuencial). No disponible para
+   * reservas CANCELLED.
+   */
+  marcarAsistencia: (reservationId: string, nuevoEstado: AsistenciaEstado, canal: AsistenciaCanal) => { success: boolean; message?: string };
+  attendanceLogs: AsistenciaLog[];
   isAdmin: boolean;
   login: (email: string, password?: string) => { success: boolean; message?: string };
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message?: string }>;
@@ -66,6 +75,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [reservationReschedules, setReservationReschedules] = useState<ReservationRescheduleLog[]>([]);
   const [bonoManualConsumptions, setBonoManualConsumptions] = useState<BonoManualConsumptionLog[]>([]);
+  const [attendanceLogs, setAttendanceLogs] = useState<AsistenciaLog[]>([]);
   const [clients, setClients] = useState<User[]>([]);
 
   // Reads the registered clients from the "DB" (passwords stripped) so the
@@ -129,6 +139,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
             setBonoManualConsumptions([]);
         }
     }
+
+    // 6. Load attendance audit log (Sprint 23)
+    const storedAttendanceLogs = localStorage.getItem(STORAGE_KEYS.attendanceLogs);
+    if (storedAttendanceLogs) {
+        try {
+            setAttendanceLogs(JSON.parse(storedAttendanceLogs));
+        } catch (e) {
+            console.error("Failed to load attendance logs, initializing empty.");
+            setAttendanceLogs([]);
+        }
+    }
   }, []);
 
   // Persist reservations whenever they change
@@ -149,6 +170,12 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         localStorage.setItem(STORAGE_KEYS.bonoManualConsumptions, JSON.stringify(bonoManualConsumptions));
     }
   }, [bonoManualConsumptions]);
+
+  useEffect(() => {
+    if (attendanceLogs.length > 0) {
+        localStorage.setItem(STORAGE_KEYS.attendanceLogs, JSON.stringify(attendanceLogs));
+    }
+  }, [attendanceLogs]);
 
   // --- AUTH ACTIONS ---
 
@@ -500,6 +527,70 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return { success: true };
   };
 
+  // Fija el estado de asistencia de una reserva (Sprint 23) — informativo:
+  // no toca `status`, `bonoStatus`, cobros ni facturación en ningún punto
+  // de esta función (independencia absoluta, por diseño, no por
+  // convención). Disponible para CONFIRMED y COMPLETED; no para CANCELLED.
+  // Libremente asignable (no exige una secuencia entre los 4 estados).
+  const marcarAsistencia = (
+    reservationId: string,
+    nuevoEstado: AsistenciaEstado,
+    canal: AsistenciaCanal
+  ): { success: boolean; message?: string } => {
+    const reservation = reservations.find(r => r.id === reservationId);
+    if (!reservation) {
+        return { success: false, message: 'La reserva no existe.' };
+    }
+    if (reservation.status === 'CANCELLED') {
+        return { success: false, message: 'No se puede registrar asistencia en una reserva cancelada.' };
+    }
+
+    const estadoAnterior: AsistenciaEstado = reservation.asistencia ?? 'pendiente';
+    if (estadoAnterior === nuevoEstado) {
+        return { success: true };
+    }
+
+    setReservations(prev => {
+        const updated = prev.map(r => r.id === reservationId ? { ...r, asistencia: nuevoEstado } : r);
+        localStorage.setItem(STORAGE_KEYS.reservations, JSON.stringify(updated));
+        return updated;
+    });
+
+    const log: AsistenciaLog = {
+        id: createEntityId('asis'),
+        reservationId,
+        personaId: reservation.personaId,
+        estadoAnterior,
+        estadoNuevo: nuevoEstado,
+        canal,
+        usuarioId: user?.id ?? '',
+        usuarioNombre: user?.name ?? '',
+        createdAt: Date.now(),
+    };
+    setAttendanceLogs(prev => [...prev, log]);
+
+    // El Historial de la Ficha se alimenta escuchando este evento (ver
+    // CRMContext) — igual que ReservationRescheduled/BonoConsumedManually,
+    // esta función no escribe en el repositorio de PersonaEvento
+    // directamente. El mismo evento queda disponible para que futuros
+    // módulos de KPIs, recordatorios, informes, automatizaciones o IA se
+    // suscriban sin modificar esta lógica.
+    domainEventBus.emit({
+        type: 'AttendanceUpdated',
+        reservationId,
+        personaId: reservation.personaId,
+        centerId: reservation.centerId,
+        serviceId: reservation.serviceId,
+        previous: estadoAnterior,
+        next: nuevoEstado,
+        canal,
+        changedBy: { userId: user?.id ?? '', userName: user?.name ?? '' },
+        occurredAt: new Date().toISOString(),
+    });
+
+    return { success: true };
+  };
+
   const isAdmin = user?.role === 'ADMIN';
 
   return (
@@ -519,6 +610,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       reservationReschedules,
       marcarBonoConsumidoManualmente,
       bonoManualConsumptions,
+      marcarAsistencia,
+      attendanceLogs,
       isAdmin,
       login,
       register,
