@@ -1,10 +1,13 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, DatosFiscalesEmpresa, Factura, CobroFactura } from '../types';
+import { FinanceParams, FinanceEntry, FinanceEntryTotals, FinanceServiceName, DatosFiscalesEmpresa, Factura, CobroFactura, FormaPago } from '../types';
 import { Rate } from '../modules/catalog/types';
 import { useCatalog } from '../modules/catalog/context/CatalogContext';
+import { useApp } from './AppContext';
 import { DEFAULT_FINANCE_PARAMS, DEFAULT_DATOS_FISCALES } from '../constants';
 import { STORAGE_KEYS } from '../config/storageKeys';
+import { createEntityId } from '../core/data/entityId';
+import { domainEventBus } from '../core/events/domainEvents';
 
 const PARAMS_KEY = STORAGE_KEYS.financeParams;
 const ENTRIES_KEY = STORAGE_KEYS.financeEntries;
@@ -19,10 +22,10 @@ export function nextInvoiceNumber(facturas: Factura[], year: number): string {
 }
 
 /**
- * Importe pendiente de una factura (Sprint 20) — total menos la suma de
- * sus cobros. Con el único flujo de hoy (cobro único por el total) siempre
- * da 0 o el total completo, pero ya admite cobros parciales futuros sin
- * cambiar esta función.
+ * Importe pendiente de una factura (Sprint 20, cobros parciales reales
+ * desde el Sprint 24) — total menos la suma de sus cobros. Ya soportaba
+ * cobros parciales desde el Sprint 20 sin cambiar esta función; el Sprint
+ * 24 es el que por fin permite crear más de un CobroFactura por factura.
  */
 export function getImportePendiente(factura: Factura, cobros: CobroFactura[]): number {
   const cobrado = cobros.filter(c => c.facturaId === factura.id).reduce((sum, c) => sum + c.importe, 0);
@@ -117,14 +120,22 @@ interface FinanceContextType {
   /** Emite la factura de una FinanceEntry ya registrada — numeración correlativa única. */
   generarFactura: (entry: FinanceEntry) => Factura;
   cobros: CobroFactura[];
-  /** Registra el cobro del importe pendiente y pasa la factura a 'cobrada' (Sprint 20). */
-  marcarComoCobrada: (facturaId: string) => void;
+  /**
+   * Registra un cobro sobre una factura (Sprint 24) — parcial o por el
+   * importe pendiente completo. Nunca permite cobrar más del pendiente.
+   * Cuando el pendiente llega a 0, la factura pasa a 'cobrada'; si queda
+   * pendiente, sigue en 'emitida' (un cobro parcial no cambia el estado).
+   * El CobroFactura creado es inmutable: no existe ninguna función para
+   * editarlo o borrarlo.
+   */
+  registrarCobro: (facturaId: string, importe: number, formaPago: FormaPago, referencia?: string) => { success: boolean; message?: string };
 }
 
 const FinanceContext = createContext<FinanceContextType | undefined>(undefined);
 
 export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { rates } = useCatalog();
+  const { user } = useApp();
   const [params, setParams] = useState<FinanceParams>(DEFAULT_FINANCE_PARAMS);
   const [entries, setEntries] = useState<FinanceEntry[]>([]);
   const [datosFiscales, setDatosFiscales] = useState<DatosFiscalesEmpresa>(DEFAULT_DATOS_FISCALES);
@@ -232,33 +243,77 @@ export const FinanceProvider: React.FC<{ children: ReactNode }> = ({ children })
       total: totals.totalCharged,
       estado: 'emitida',
       createdAt: Date.now(),
+      usuarioId: user?.id,
+      usuarioNombre: user?.name,
     };
     setFacturas(prev => [...prev, factura]);
     return factura;
   };
 
-  const marcarComoCobrada = (facturaId: string) => {
+  // Registra un cobro (Sprint 24) — parcial o por el pendiente completo.
+  // El CobroFactura creado nunca se edita ni se borra (inmutable, decisión
+  // de negocio): un error se corrige más adelante con una operación de
+  // reversión explícita, nunca modificando este registro.
+  const registrarCobro = (
+    facturaId: string,
+    importe: number,
+    formaPago: FormaPago,
+    referencia?: string
+  ): { success: boolean; message?: string } => {
     const factura = facturas.find(f => f.id === facturaId);
-    if (!factura) return;
+    if (!factura) {
+        return { success: false, message: 'La factura no existe.' };
+    }
     const pendiente = getImportePendiente(factura, cobros);
-    if (pendiente <= 0) return;
+    if (pendiente <= 0) {
+        return { success: false, message: 'Esta factura no tiene importe pendiente.' };
+    }
+    if (importe <= 0 || importe > pendiente) {
+        return { success: false, message: `El importe debe ser mayor que 0 y no puede superar el pendiente (${pendiente.toFixed(2)} €).` };
+    }
 
     const cobro: CobroFactura = {
-      id: `cob_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      facturaId,
-      fecha: new Date().toISOString(),
-      importe: pendiente,
-      createdAt: Date.now(),
+        id: createEntityId('cob'),
+        facturaId,
+        fecha: new Date().toISOString(),
+        importe,
+        formaPago,
+        referencia,
+        usuarioId: user?.id,
+        usuarioNombre: user?.name,
+        createdAt: Date.now(),
     };
     setCobros(prev => [...prev, cobro]);
-    setFacturas(prev => prev.map(f => f.id === facturaId ? { ...f, estado: 'cobrada' } : f));
+
+    const pendienteRestante = pendiente - importe;
+    if (pendienteRestante <= 0) {
+        setFacturas(prev => prev.map(f => f.id === facturaId ? { ...f, estado: 'cobrada' } : f));
+    }
+
+    // El Historial de la Ficha se alimenta escuchando este evento (ver
+    // CRMContext) — FinanceProvider está por encima de CRMProvider en el
+    // árbol y no puede llamar a useCRM() directamente.
+    domainEventBus.emit({
+        type: 'CobroRegistered',
+        cobroId: cobro.id,
+        facturaId,
+        personaId: factura.personaId,
+        importe,
+        formaPago,
+        referencia,
+        pendienteRestante,
+        changedBy: { userId: user?.id ?? '', userName: user?.name ?? '' },
+        occurredAt: new Date().toISOString(),
+    });
+
+    return { success: true };
   };
 
   return (
     <FinanceContext.Provider value={{
       params, updateParams, entries, addEntry, deleteEntry, computeTotals,
       datosFiscales, updateDatosFiscales, facturas, generarFactura,
-      cobros, marcarComoCobrada,
+      cobros, registrarCobro,
     }}>
       {children}
     </FinanceContext.Provider>

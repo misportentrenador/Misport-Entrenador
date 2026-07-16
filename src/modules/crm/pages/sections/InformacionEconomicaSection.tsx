@@ -17,7 +17,9 @@ import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
 import { formatEUR } from '../../../../shared/lib/format';
 import { PagoFormFields } from '../../../../components/PagoFormFields';
+import { RegistrarCobroModal } from '../../../../components/RegistrarCobroModal';
 import { downloadInvoicePdf } from '../../../../shared/lib/invoicePdf';
+import { Factura } from '../../../../types';
 
 interface Props {
   personaId: string;
@@ -36,7 +38,7 @@ const emptyPagoForm = { date: new Date().toISOString().slice(0, 10), trainerName
 export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
   const { bonosCliente } = useCRM();
   const { bonos } = useCatalog();
-  const { entries, addEntry, computeTotals, facturas, generarFactura, datosFiscales, cobros, marcarComoCobrada } = useFinance();
+  const { entries, addEntry, computeTotals, facturas, generarFactura, datosFiscales, cobros } = useFinance();
   const { trainers, centers } = useApp();
   const { personas } = useMasterData();
   const persona = personas.items.find(p => p.id === personaId);
@@ -49,6 +51,7 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
   const [pagoForm, setPagoForm] = useState(emptyPagoForm);
   const [bonoSaved, setBonoSaved] = useState(false);
   const [pagoSaved, setPagoSaved] = useState(false);
+  const [cobrandoFactura, setCobrandoFactura] = useState<Factura | null>(null);
 
   const handleCreateBono = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,6 +168,7 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
                 {misPagos.map(p => {
                   const factura = facturas.find(f => f.financeEntryId === p.id);
                   const pendiente = factura ? getImportePendiente(factura, cobros) : 0;
+                  const cobrado = factura ? factura.total - pendiente : 0;
                   return (
                     <tr key={p.id} className="border-b border-gray-800">
                       <td className="px-4 py-2 text-white">{p.date}</td>
@@ -178,7 +182,9 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
                               {factura.estado === 'emitida' ? 'Emitida' : factura.estado === 'cobrada' ? 'Cobrada' : factura.estado === 'anulada' ? 'Anulada' : 'Borrador'}
                             </Badge>
                             {factura.estado === 'emitida' && pendiente > 0 && (
-                              <span className="text-xs text-misportOrange">Pendiente: {formatEUR(pendiente)}</span>
+                              <span className="text-xs text-misportOrange">
+                                {cobrado > 0 ? `Cobrado parcialmente: ${formatEUR(cobrado)} · Pendiente: ${formatEUR(pendiente)}` : `Pendiente: ${formatEUR(pendiente)}`}
+                              </span>
                             )}
                           </div>
                         ) : (
@@ -190,8 +196,8 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
                           {factura ? (
                             <>
                               {factura.estado === 'emitida' && (
-                                <button onClick={() => marcarComoCobrada(factura.id)} className="flex items-center gap-1 text-xs font-bold text-green-400 hover:text-green-300">
-                                  <CircleDollarSign size={12} /> Marcar como cobrada
+                                <button onClick={() => setCobrandoFactura(factura)} className="flex items-center gap-1 text-xs font-bold text-green-400 hover:text-green-300">
+                                  <CircleDollarSign size={12} /> Registrar cobro
                                 </button>
                               )}
                               <button onClick={() => handleDescargarFactura(p.id)} className="flex items-center gap-1 text-xs font-bold text-misportBlue hover:text-blue-400">
@@ -226,6 +232,10 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
           </div>
         </form>
       </Card>
+
+      {cobrandoFactura && (
+        <RegistrarCobroModal factura={cobrandoFactura} open onClose={() => setCobrandoFactura(null)} />
+      )}
     </div>
   );
 };

@@ -1,21 +1,22 @@
-import { AsistenciaEstado, AsistenciaCanal } from '../../types';
+import { AsistenciaEstado, AsistenciaCanal, FormaPago } from '../../types';
 
 /**
  * Bus de eventos internos de dominio (Sprint 21) — mecanismo mínimo para
  * que una acción de negocio (reprogramar una reserva, consumir un bono
- * manualmente, confirmar asistencia, y las que vengan después) emita un
- * hecho consumible por quien lo necesite, sin acoplar quién lo emite a
- * quién lo escucha.
+ * manualmente, confirmar asistencia, registrar un cobro, y las que vengan
+ * después) emita un hecho consumible por quien lo necesite, sin acoplar
+ * quién lo emite a quién lo escucha.
  *
- * Hoy ya tiene un listener real: CRMContext se suscribe para alimentar el
- * Historial de la Ficha (necesario porque AppProvider está por encima de
- * CRMProvider en el árbol y no puede llamar a useCRM() directamente). Está
- * pensado también para: (a) las futuras integraciones con Google Calendar,
- * Booksy u otros proveedores (Sprint 18) — el adaptador correspondiente se
- * suscribe aquí y empuja el cambio al proveedor externo; (b) futuros
- * módulos de KPIs, recordatorios automáticos, informes, automatizaciones e
- * IA (Sprint 23) que necesiten reaccionar a cambios de asistencia — todos
- * sin tocar la lógica de negocio que emite el evento.
+ * Hoy ya tiene listeners reales: CRMContext y FinanceContext se suscriben
+ * para alimentar el Historial de la Ficha (necesario porque AppProvider y
+ * FinanceProvider están por encima de CRMProvider en el árbol y no pueden
+ * llamar a useCRM() directamente). Está pensado también para: (a) las
+ * futuras integraciones con Google Calendar, Booksy u otros proveedores
+ * (Sprint 18) — el adaptador correspondiente se suscribe aquí y empuja el
+ * cambio al proveedor externo; (b) futuros módulos de Tesorería, KPIs,
+ * Contabilidad, un ERP externo, recordatorios automáticos, informes,
+ * automatizaciones e IA (Sprints 23-24) — todos sin tocar la lógica de
+ * negocio que emite el evento.
  */
 export interface ReservationRescheduledEvent {
   type: 'ReservationRescheduled';
@@ -66,8 +67,31 @@ export interface AttendanceUpdatedEvent {
   occurredAt: string; // ISO datetime
 }
 
+/**
+ * Cobro registrado sobre una Factura (Sprint 24) — parcial o completo.
+ * Lleva `cobroId`, el identificador único y permanente del CobroFactura
+ * (inmutable, nunca se edita ni se borra), para que cualquier futuro
+ * suscriptor pueda referenciar exactamente ese cobro sin tener que volver
+ * a consultarlo. Diseñado desde el principio para que, sin modificar
+ * `registrarCobro`, puedan suscribirse en el futuro módulos de Tesorería
+ * (conciliación bancaria, remesas), KPIs, Contabilidad, un ERP externo,
+ * Automatizaciones o IA.
+ */
+export interface CobroRegisteredEvent {
+  type: 'CobroRegistered';
+  cobroId: string;
+  facturaId: string;
+  personaId: string;
+  importe: number;
+  formaPago?: FormaPago;
+  referencia?: string;
+  pendienteRestante: number;
+  changedBy: { userId: string; userName: string };
+  occurredAt: string; // ISO datetime
+}
+
 // Únelo aquí cuando se añadan más tipos de evento de dominio.
-export type DomainEvent = ReservationRescheduledEvent | BonoConsumedManuallyEvent | AttendanceUpdatedEvent;
+export type DomainEvent = ReservationRescheduledEvent | BonoConsumedManuallyEvent | AttendanceUpdatedEvent | CobroRegisteredEvent;
 
 type DomainEventListener<E extends DomainEvent = DomainEvent> = (event: E) => void;
 

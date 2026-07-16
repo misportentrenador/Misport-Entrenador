@@ -11,6 +11,8 @@ import {
 import { useEntityCollection } from '../../../shared/hooks/useEntityCollection';
 import { domainEventBus } from '../../../core/events/domainEvents';
 import { ASISTENCIA_ESTADO_LABEL } from '../../../shared/lib/reservationLabels';
+import { FORMA_PAGO_LABEL } from '../../../shared/lib/financeLabels';
+import { formatEUR } from '../../../shared/lib/format';
 
 type EntityBinding<T extends Entity & Timestamps> = ReturnType<typeof useEntityCollection<T>>;
 
@@ -53,14 +55,16 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Escucha los eventos de dominio que afectan al timeline de la Persona
   // (ReservationRescheduled, Sprint 21; BonoConsumedManually y
-  // AttendanceUpdated, Sprint 22-23) — AppContext solo emite el evento,
-  // nunca escribe en el repositorio de PersonaEvento directamente, porque
-  // AppProvider está por encima de CRMProvider en el árbol y no puede ver
-  // este estado. Escribir aquí (con eventos.create, no el repo a pelo)
-  // asegura que la Ficha refleje el cambio sin necesitar recargar la
-  // página. Los mismos eventos quedan disponibles para que futuros
-  // adaptadores (Booksy/Google Calendar) o módulos (KPIs, recordatorios,
-  // informes, automatizaciones, IA) se suscriban sin tocar esta lógica.
+  // AttendanceUpdated, Sprint 22-23; CobroRegistered, Sprint 24) —
+  // AppContext/FinanceContext solo emiten el evento, nunca escriben en el
+  // repositorio de PersonaEvento directamente, porque AppProvider y
+  // FinanceProvider están por encima de CRMProvider en el árbol y no
+  // pueden ver este estado. Escribir aquí (con eventos.create, no el repo
+  // a pelo) asegura que la Ficha refleje el cambio sin necesitar recargar
+  // la página. Los mismos eventos quedan disponibles para que futuros
+  // adaptadores (Booksy/Google Calendar), módulos de Tesorería/KPIs/
+  // Contabilidad/ERP, recordatorios, informes, automatizaciones o IA se
+  // suscriban sin tocar esta lógica.
   useEffect(() => {
     return domainEventBus.subscribe(event => {
       if (event.type === 'ReservationRescheduled' && event.personaId) {
@@ -82,6 +86,14 @@ export const CRMProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
           personaId: event.personaId,
           tipo: 'Asistencia',
           descripcion: `Asistencia actualizada: ${ASISTENCIA_ESTADO_LABEL[event.previous]} → ${ASISTENCIA_ESTADO_LABEL[event.next]}.`,
+          fecha: event.occurredAt,
+        });
+      } else if (event.type === 'CobroRegistered') {
+        const formaPagoLabel = event.formaPago ? ` (${FORMA_PAGO_LABEL[event.formaPago]})` : '';
+        eventos.create({
+          personaId: event.personaId,
+          tipo: 'Cobro registrado',
+          descripcion: `Cobro de ${formatEUR(event.importe)}${formaPagoLabel}. Pendiente restante: ${formatEUR(event.pendienteRestante)}.`,
           fecha: event.occurredAt,
         });
       }

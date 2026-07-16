@@ -268,21 +268,36 @@ export interface Factura {
   total: number;
   estado: FacturaEstado;
   createdAt: number;
+  /** Auditoría (Sprint 24) — quién generó la factura. Opcional: las facturas de los Sprints 19-20 no lo tienen y no se migran. */
+  usuarioId?: string;
+  usuarioNombre?: string;
 }
 
 /**
- * Forma de pago de un cobro (Sprint 20) — el único flujo implementado hoy
- * ("Marcar como cobrada") no la pide todavía; el campo es opcional para no
- * inventar un valor cuando nadie lo ha elegido.
+ * Forma de pago de un cobro (Sprint 20; exigida en la UI desde el Sprint
+ * 24). El campo se mantiene opcional en el tipo porque los cobros creados
+ * antes del Sprint 24 (el antiguo "Marcar como cobrada") no la tienen.
  */
 export type FormaPago = 'efectivo' | 'transferencia' | 'tarjeta' | 'otro';
 
 /**
- * Cobro aplicado a una Factura (Sprint 20). Se modela como registros
- * independientes — en vez de un simple booleano en Factura — para poder
- * soportar más adelante cobros parciales (varios CobroFactura sumando
- * menos que el total) sin rediseñar nada; hoy solo se crea un único
- * CobroFactura por el importe total al marcar la factura como cobrada.
+ * Cobro aplicado a una Factura (Sprint 20, fase 2 en el Sprint 24). Se
+ * modela como registros independientes — en vez de un simple booleano en
+ * Factura — para admitir varios cobros por factura (parciales o
+ * completos), cada uno con su propio método de pago.
+ *
+ * INMUTABLE (Sprint 24, decisión de negocio): una vez creado, un
+ * CobroFactura no se edita ni se borra — no existe ninguna función
+ * updateCobro/deleteCobro. Un error se corrige en el futuro con una
+ * operación de corrección/reversión explícita (p. ej. un cobro negativo
+ * o un estado 'anulado' propio), nunca modificando el registro original.
+ *
+ * `id` es el identificador único y permanente (Sprint 24, requisito de
+ * negocio) al que se enlazará en el futuro cualquier medio de cobro
+ * externo (conciliación bancaria, TPV, Bizum, Stripe, transferencia...)
+ * — el campo `referencia` ya permite anotar hoy, en texto libre, el dato
+ * de ese medio externo; un campo dedicado (p. ej. `stripePaymentId`) se
+ * añadiría más adelante sin romper los cobros ya existentes.
  */
 export interface CobroFactura {
   id: string;
@@ -290,5 +305,10 @@ export interface CobroFactura {
   fecha: string; // ISO datetime — fecha y hora del cobro
   importe: number;
   formaPago?: FormaPago;
+  /** Nota/referencia libre del medio de pago (p. ej. nº de operación bancaria). */
+  referencia?: string;
+  /** Auditoría (Sprint 24) — quién registró el cobro. Opcional: los cobros del Sprint 20 no lo tienen. */
+  usuarioId?: string;
+  usuarioNombre?: string;
   createdAt: number;
 }
