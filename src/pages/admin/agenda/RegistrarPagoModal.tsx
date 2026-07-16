@@ -51,6 +51,10 @@ export const RegistrarPagoModal: React.FC<RegistrarPagoModalProps> = ({ session,
       service: form.service,
       groupDays: form.service === 'Entrenamiento grupal' ? Number(form.groupDays) as 1 | 2 | 3 : undefined,
       quantity,
+      manualPrice: form.manualPrice ? Number(form.manualPrice) : undefined,
+      manualTrainerPay: form.manualTrainerPay ? Number(form.manualTrainerPay) : undefined,
+      manualCenterPay: form.manualCenterPay ? Number(form.manualCenterPay) : undefined,
+      notes: form.notes || undefined,
       personaId: r.personaId ?? undefined,
     });
     setSaved(true);
@@ -60,7 +64,7 @@ export const RegistrarPagoModal: React.FC<RegistrarPagoModalProps> = ({ session,
   return (
     <Modal open={open} onClose={onClose} title={`Registrar pago · ${r.userName}`}>
       <form onSubmit={handleSubmit} className="space-y-3">
-        <PagoFormFields value={form} onChange={setForm} trainers={trainers} centers={centers} />
+        <PagoFormFields value={form} onChange={setForm} trainers={trainers} centers={centers} showAdvanced />
         <div className="flex items-center gap-4 pt-2">
           <Button type="submit"><Save size={16} /> Registrar pago</Button>
           {saved && <span className="text-green-400 text-sm font-bold">Pago registrado ✓</span>}

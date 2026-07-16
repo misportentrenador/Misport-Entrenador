@@ -16,7 +16,7 @@ import { Badge } from '../../../../components/ui/Badge';
 import { EmptyState } from '../../../../components/ui/EmptyState';
 import { Spinner } from '../../../../components/ui/Spinner';
 import { formatEUR } from '../../../../shared/lib/format';
-import { PagoFormFields } from '../../../../components/PagoFormFields';
+import { PagoFormFields, PagoFormValue } from '../../../../components/PagoFormFields';
 import { RegistrarCobroModal } from '../../../../components/RegistrarCobroModal';
 import { downloadInvoicePdf } from '../../../../shared/lib/invoicePdf';
 import { Factura } from '../../../../types';
@@ -26,7 +26,7 @@ interface Props {
 }
 
 const emptyBonoForm = { bonoId: '', sessionsRemaining: '1', purchaseDate: new Date().toISOString().slice(0, 10), expiryDate: '' };
-const emptyPagoForm = { date: new Date().toISOString().slice(0, 10), trainerName: '', centerName: '', service: FINANCE_SERVICES[0] as FinanceServiceName, groupDays: '1' as '1' | '2' | '3', quantity: '1' };
+const emptyPagoForm = { date: new Date().toISOString().slice(0, 10), trainerName: '', centerName: '', service: FINANCE_SERVICES[0] as FinanceServiceName, groupDays: '1' as '1' | '2' | '3', quantity: '1', manualPrice: '', manualTrainerPay: '', manualCenterPay: '', notes: '' };
 
 /**
  * Información económica — Sprint 10: alta de BonoCliente y de pagos.
@@ -48,7 +48,7 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
   const totalFacturado = misPagos.reduce((sum, e) => sum + computeTotals(e).billingBase, 0);
 
   const [bonoForm, setBonoForm] = useState(emptyBonoForm);
-  const [pagoForm, setPagoForm] = useState(emptyPagoForm);
+  const [pagoForm, setPagoForm] = useState<PagoFormValue>(emptyPagoForm);
   const [bonoSaved, setBonoSaved] = useState(false);
   const [pagoSaved, setPagoSaved] = useState(false);
   const [cobrandoFactura, setCobrandoFactura] = useState<Factura | null>(null);
@@ -80,6 +80,10 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
       service: pagoForm.service,
       groupDays: pagoForm.service === 'Entrenamiento grupal' ? Number(pagoForm.groupDays) as 1 | 2 | 3 : undefined,
       quantity,
+      manualPrice: pagoForm.manualPrice ? Number(pagoForm.manualPrice) : undefined,
+      manualTrainerPay: pagoForm.manualTrainerPay ? Number(pagoForm.manualTrainerPay) : undefined,
+      manualCenterPay: pagoForm.manualCenterPay ? Number(pagoForm.manualCenterPay) : undefined,
+      notes: pagoForm.notes || undefined,
       personaId,
     });
     setPagoForm(emptyPagoForm);
@@ -225,7 +229,7 @@ export const InformacionEconomicaSection: React.FC<Props> = ({ personaId }) => {
         )}
 
         <form onSubmit={handleRegisterPayment} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end pt-4 border-t border-gray-800">
-          <PagoFormFields value={pagoForm} onChange={setPagoForm} trainers={trainers} centers={centers} />
+          <PagoFormFields value={pagoForm} onChange={setPagoForm} trainers={trainers} centers={centers} showAdvanced />
           <div className="sm:col-span-4 flex items-center gap-4">
             <Button type="submit"><Save size={16} /> Registrar pago</Button>
             {pagoSaved && <span className="text-green-400 text-sm font-bold">Pago registrado ✓</span>}

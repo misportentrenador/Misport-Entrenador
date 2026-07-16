@@ -4,18 +4,17 @@ import { Euro, Calculator, Save, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useFinance, findFinanceRate } from '../context/FinanceContext';
 import { useCatalog } from '../modules/catalog/context/CatalogContext';
+import { useMasterData } from '../modules/masterdata/context/MasterDataContext';
 import { FINANCE_SERVICES, FINANCE_ONLINE_CENTER } from '../constants';
 import { FinanceServiceName, ServiceRate, GroupRate, FinanceEntry, FinanceEntryTotals } from '../types';
 import { formatEUR } from '../shared/lib/format';
+import { PagoFormFields, PagoFormValue } from './PagoFormFields';
 
 const inputCls =
   'w-full p-2.5 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all text-sm';
 // Amber = valor económico fijo (tarifa del Modelo, o un override manual que lo sustituye)
 const fixedInputCls =
   'w-full p-2.5 bg-amber-950/40 border border-amber-700/50 rounded-lg text-amber-50 placeholder-amber-700/60 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all text-sm';
-// Azul = dato variable de la sesión (cambia cada vez que se registra)
-const variableInputCls =
-  'w-full p-2.5 bg-blue-950/30 border border-blue-800/50 rounded-lg text-white placeholder-gray-600 focus:ring-2 focus:ring-misportBlue focus:border-transparent outline-none transition-all text-sm';
 const labelCls = 'block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5';
 
 // Verde si el resultado es positivo (o cero), rojo si es negativo
@@ -206,26 +205,37 @@ const ParametrosTab: React.FC = () => {
 };
 
 // --- SUB-TAB: REGISTRAR SESIÓN ---
+// Comparte PagoFormFields con InformacionEconomicaSection (Ficha CRM) y
+// RegistrarPagoModal (Agenda) — antes tenía su propia copia inline de los
+// mismos campos (Sprint 25). Aquí, a diferencia de esos dos sitios, el
+// cliente es opcional (`personas` prop): sin seleccionar uno, la entrada
+// queda igual que antes (sin personaId, no facturable a nadie en
+// concreto); seleccionándolo, queda vinculada a esa Persona igual que si
+// se hubiera registrado desde su propia Ficha — cierra el hueco por el
+// que una sesión de un cliente real quedaba invisible en su Historial y
+// nunca podía facturarse.
 const RegistroTab: React.FC = () => {
   const { trainers, centers } = useApp();
   const { entries, addEntry, deleteEntry, computeTotals } = useFinance();
+  const { personas } = useMasterData();
 
   const trainerNames = trainers.map(t => t.name);
   const centerNames = [...centers.map(c => c.name), FINANCE_ONLINE_CENTER];
 
-  const emptyForm = {
+  const emptyForm: PagoFormValue = {
     date: new Date().toISOString().slice(0, 10),
     trainerName: trainerNames[0] ?? '',
     centerName: centerNames[0] ?? '',
     service: FINANCE_SERVICES[0] as FinanceServiceName,
-    groupDays: '1' as '1' | '2' | '3',
+    groupDays: '1',
     quantity: '1',
+    personaId: undefined,
     manualPrice: '',
     manualTrainerPay: '',
     manualCenterPay: '',
     notes: '',
   };
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState<PagoFormValue>(emptyForm);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,10 +249,11 @@ const RegistroTab: React.FC = () => {
       service: form.service,
       groupDays: form.service === 'Entrenamiento grupal' ? (Number(form.groupDays) as 1 | 2 | 3) : undefined,
       quantity,
-      manualPrice: form.manualPrice === '' ? undefined : Number(form.manualPrice),
-      manualTrainerPay: form.manualTrainerPay === '' ? undefined : Number(form.manualTrainerPay),
-      manualCenterPay: form.manualCenterPay === '' ? undefined : Number(form.manualCenterPay),
+      manualPrice: form.manualPrice ? Number(form.manualPrice) : undefined,
+      manualTrainerPay: form.manualTrainerPay ? Number(form.manualTrainerPay) : undefined,
+      manualCenterPay: form.manualCenterPay ? Number(form.manualCenterPay) : undefined,
       notes: form.notes || undefined,
+      personaId: form.personaId,
     });
 
     setForm(f => ({ ...emptyForm, trainerName: f.trainerName, centerName: f.centerName, service: f.service }));
@@ -261,67 +272,7 @@ const RegistroTab: React.FC = () => {
           ]} />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
-            <label className={labelCls}>Fecha</label>
-            <input type="date" className={variableInputCls} value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
-          </div>
-          <div>
-            <label className={labelCls}>Entrenador</label>
-            <select className={variableInputCls} value={form.trainerName} onChange={e => setForm(f => ({ ...f, trainerName: e.target.value }))}>
-              {trainerNames.map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Centro</label>
-            <select className={variableInputCls} value={form.centerName} onChange={e => setForm(f => ({ ...f, centerName: e.target.value }))}>
-              {centerNames.map(n => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className={labelCls}>Servicio</label>
-            <select className={variableInputCls} value={form.service} onChange={e => setForm(f => ({ ...f, service: e.target.value as FinanceServiceName }))}>
-              {FINANCE_SERVICES.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-          </div>
-
-          {form.service === 'Entrenamiento grupal' && (
-            <div>
-              <label className={labelCls}>Días/semana</label>
-              <select className={variableInputCls} value={form.groupDays} onChange={e => setForm(f => ({ ...f, groupDays: e.target.value as '1' | '2' | '3' }))}>
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3">3</option>
-              </select>
-            </div>
-          )}
-
-          <div>
-            <label className={labelCls}>Cantidad (sesiones)</label>
-            <input type="number" min="1" step="1" className={variableInputCls} value={form.quantity} onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))} required />
-          </div>
-        </div>
-
-        <details className="text-sm">
-          <summary className="cursor-pointer text-gray-400 hover:text-white font-medium select-none">Overrides manuales (opcional, para saltarse los parámetros fijos ese día)</summary>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
-            <div>
-              <label className={labelCls}>Precio manual unit. (€)</label>
-              <input type="number" step="0.5" className={fixedInputCls} placeholder="Usar precio fijo" value={form.manualPrice} onChange={e => setForm(f => ({ ...f, manualPrice: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>Pago entrenador manual (€)</label>
-              <input type="number" step="0.5" className={fixedInputCls} placeholder="Usar pago fijo" value={form.manualTrainerPay} onChange={e => setForm(f => ({ ...f, manualTrainerPay: e.target.value }))} />
-            </div>
-            <div>
-              <label className={labelCls}>Pago centro manual (€)</label>
-              <input type="number" step="0.5" className={fixedInputCls} placeholder="Usar pago fijo" value={form.manualCenterPay} onChange={e => setForm(f => ({ ...f, manualCenterPay: e.target.value }))} />
-            </div>
-          </div>
-        </details>
-
-        <div>
-          <label className={labelCls}>Notas</label>
-          <input type="text" className={variableInputCls} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Opcional" />
+          <PagoFormFields value={form} onChange={setForm} trainers={trainers} centers={centers} personas={personas.items} showAdvanced />
         </div>
 
         <button type="submit" className="flex items-center gap-2 bg-misportOrange hover:bg-orange-600 text-white font-bold px-6 py-3 rounded-lg transition-all shadow-lg">
