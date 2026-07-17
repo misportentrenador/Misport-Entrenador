@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# Playwright Test (Sprint 26) — generated reports/artifacts, not the tests themselves
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
